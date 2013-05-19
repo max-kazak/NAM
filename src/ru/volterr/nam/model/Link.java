@@ -2,14 +2,19 @@ package ru.volterr.nam.model;
 
 import java.io.Serializable;
 
+import org.apache.commons.collections15.comparators.ComparableComparator;
+
+import edu.uci.ics.jung.graph.util.EdgeType;
+
 import jade.core.AID;
 
-public class Link implements Serializable{
+public class Link implements Serializable {
 	//Link statuses
 	public static final int FREE_STATUS = 0;
 	public static final int BUSY_STATUS = 1;
 	
 	private Node a,z;
+	private EdgeType type = EdgeType.UNDIRECTED;
 	private String name;
 	private int astatus = 0, zstatus = 0;
 	private long bandwidth;
@@ -69,4 +74,16 @@ public class Link implements Serializable{
 	public void setName(String name) {
 		this.name = name;
 	}
+	public EdgeType getType() {
+		return type;
+	}
+	public void setType(EdgeType type) {
+		this.type = type;
+	}
+	
+	@Override
+	public String toString(){
+		return name;
+	}
+
 }

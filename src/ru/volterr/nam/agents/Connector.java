@@ -4,15 +4,21 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
+import edu.uci.ics.jung.graph.SortedSparseMultigraph;
 
 import ru.volterr.nam.AIDPair;
 import ru.volterr.nam.Constants;
 import ru.volterr.nam.Pair;
 import ru.volterr.nam.behaviours.connector.ConnNewLink;
 import ru.volterr.nam.behaviours.connector.ConnRecvMsg;
+import ru.volterr.nam.gui.model.ByNameLinkComparator;
+import ru.volterr.nam.gui.model.ByNameVetexComparator;
 import ru.volterr.nam.gui.views.ConnectorGUI;
 import ru.volterr.nam.model.Link;
 import ru.volterr.nam.model.Node;
@@ -36,14 +42,19 @@ public class Connector extends GuiAgent {
 	private Logger log;
 	private AgentContainer containercontr;
 	
-	private Map<AIDPair, List<AID>> routes = new HashMap<AIDPair, List<AID>>(); //Map< Pair<src,dest>, List<PE> >
+	private Map<AIDPair, List<Node>> routes = new HashMap<AIDPair, List<Node>>(); //Map< Pair<src,dest>, List<PE> >
+	public SortedSparseMultigraph<Node, Link> graph;
 	private ConnectorGUI  gui;
 	
 	public Connector(){
 		super();
 		//init logger
 		log = Logger.getMyLogger(this.getClass().getName());
-		
+		//init graph
+		Comparator<Node> vcomp = new ByNameVetexComparator();
+		Comparator<Link> lcomp = new ByNameLinkComparator();
+		graph = new SortedSparseMultigraph<Node, Link>(vcomp,lcomp);
+		//init gui
 		gui = new ConnectorGUI(this);
 	}
 	
@@ -91,29 +102,30 @@ public class Connector extends GuiAgent {
 		switch(ev.getType()){
 		case Constants.TEST_GUIEVENT:
 			testguimethod();
+			//example();
 			break;
 		}
 		
 	}
 	
-	private AID addRouter(String name){
+	private Node addRouter(AID agentid){
 		AgentController a;
 		Object [] args = null;
+		Node node = new Node(agentid,Node.ROUTER_TYPE);
 		
 		try {
-			a = containercontr.createNewAgent(name, "ru.volterr.nam.agents.RouterAgent", args);
+			a = containercontr.createNewAgent(agentid.getLocalName(), "ru.volterr.nam.agents.RouterAgent", args);
 			a.start();
-			return new AID(name,AID.ISLOCALNAME);
+			graph.addVertex(node);
+			gui.graphRepaint();
+			return node;
 		} catch (StaleProxyException e) {
 			log.log(Logger.SEVERE,"Create new agent exception:",e);
 		}
 		return null;	
 	}
-	private AID addRouter(AID agentid){
-		return addRouter(agentid.getLocalName());
-	}
-	
-	private void addUser(String name, String gateway, List<AID> subscribers, List<AID> subscriptions){
+		
+	private Node addUser(AID agentid, String gateway, List<AID> subscribers, List<AID> subscriptions){
 		AgentController a;
 		Object [] args;
 		
@@ -122,35 +134,41 @@ public class Connector extends GuiAgent {
 		args[1]=subscribers;
 		args[2]=subscriptions;
 		
+		Node node = new Node(agentid,Node.USER_TYPE);
+		
 		try {
-			a = containercontr.createNewAgent(name, "ru.volterr.nam.agents.UserAgent", args);
+			a = containercontr.createNewAgent(agentid.getLocalName(), "ru.volterr.nam.agents.UserAgent", args);
 			a.start();
+			graph.addVertex(node);
+			gui.graphRepaint();
+			return node;
 		} catch (StaleProxyException e) {
 			log.log(Logger.SEVERE,"Create new agent exception:",e);
 		}
+		return null;
 	}	
-	private void addUser(AID agentid, String gateway, List<AID> subscribers, List<AID> subscriptions){
-		addUser(agentid.getLocalName(), gateway, subscribers, subscriptions);
-	}
-	private void addUser(AID agentid, AID gatewayid, List<AID> subscribers, List<AID> subscriptions){
-		addUser(agentid.getLocalName(), gatewayid.getLocalName(), subscribers, subscriptions);
+	private Node addUser(AID agentid, AID gatewayid, List<AID> subscribers, List<AID> subscriptions){
+		return addUser(agentid, gatewayid.getLocalName(), subscribers, subscriptions);
 	}
 	
 	private void addLink(Link link){
 		addBehaviour(new ConnNewLink(link));
+		graph.addEdge(link, link.getA(), link.getZ(), link.getType());
+		gui.graphRepaint();
 	}
 	
 	public AID getNextRouteHop(AID requester, AID src, AID dest){
-		log.log(Logger.INFO,getLocalName() + "#getting next route hop for " + requester.getLocalName() + " in path (" + src.getLocalName() + ", " + dest.getLocalName() + ").");
+		log.log(Logger.INFO,getLocalName() + "#getting next route hop for " + requester.getName() + " in path (" + src.getLocalName() + ", " + dest.getLocalName() + ").");
 		
-		ArrayList<AID> route = (ArrayList<AID>) routes.get(new AIDPair(src,dest));
+		ArrayList<Node> route = (ArrayList<Node>) routes.get(new AIDPair(src,dest));
 		
 		if(route != null){
-			int i = route.lastIndexOf(requester);
+			
+			int i = route.lastIndexOf(new Node(requester,Node.ROUTER_TYPE));
 		
 			if(i != -1){
-				log.log(Logger.INFO, getLocalName() + "#" + "found route for " + requester.getLocalName() + " for path (" + src.getLocalName() + ", " + dest.getLocalName() + "). Next hop is " + route.get(i+1).getLocalName() );
-				return route.get(i+1);
+				log.log(Logger.INFO, getLocalName() + "#" + "found route for " + requester.getName() + " for path (" + src.getLocalName() + ", " + dest.getLocalName() + "). Next hop is " + route.get(i+1).getName() );
+				return route.get(i+1).getId();
 			}
 			else{
 				log.log(Logger.WARNING,getLocalName() + "#" + requester.getLocalName() + " isn't in the path (" + src.getLocalName() + ", " + dest.getLocalName() + "). Can't return next hop");
@@ -167,25 +185,16 @@ public class Connector extends GuiAgent {
 	private void example(){
 		
 		//routers
-		AID gr = addRouter("Gattaca");
-		AID sr = addRouter("Sprawl");
-		AID ar = addRouter("Aegis7");
-		
+		Node gattaca = addRouter(new AID("Gattaca",AID.ISLOCALNAME)),
+			 sprawl = addRouter(new AID("Sprawl",AID.ISLOCALNAME)),
+			 aegis = addRouter(new AID("Aegis7",AID.ISLOCALNAME));
 		//users
 		AID a = new AID("Alpha",AID.ISLOCALNAME),
 			b = new AID("Bravo",AID.ISLOCALNAME),
 			c = new AID("Charlie",AID.ISLOCALNAME);
-		addUser(a,"Gattaca",Arrays.asList(b,c),null);
-		addUser(b,"Aegis7",Arrays.asList(c),null);
-		addUser(c,"Sprawl",Arrays.asList(a),null);
-		
-		//nodes
-		Node alpha = new Node(a),
-			 bravo = new Node(b),
-			 charlie = new Node(c),
-			 gattaca = new Node(gr),
-			 sprawl = new Node(sr),
-			 aegis = new Node(ar);
+		Node alpha = addUser(a,gattaca.getId(),new ArrayList<AID>(Arrays.asList(a,b)),null),
+			 bravo = addUser(b,aegis.getId(),new ArrayList<AID>(Arrays.asList(c)),null),
+			 charlie = addUser(c,sprawl.getId(),new ArrayList<AID>(Arrays.asList(a)),null);
 		//links
 		Link alpha_gattaca = new Link(alpha, gattaca, 1000),
 			 bravo_aegis = new Link(bravo, aegis, 1000),
@@ -202,12 +211,12 @@ public class Connector extends GuiAgent {
 		addLink(sprawl_aegis);
 		
 		//routes
-		routes.put(  new AIDPair(a,b),new ArrayList<AID>( Arrays.asList(a,gr,ar,b) )  );
-		routes.put(  new AIDPair(a,c),new ArrayList<AID>( Arrays.asList(a,gr,sr,c) )  );
-		routes.put(  new AIDPair(b,a),new ArrayList<AID>( Arrays.asList(b,ar,gr,a) )  );
-		routes.put(  new AIDPair(b,c),new ArrayList<AID>( Arrays.asList(b,ar,sr,c) )  );
-		routes.put(  new AIDPair(c,b),new ArrayList<AID>( Arrays.asList(c,sr,ar,b) )  );
-		routes.put(  new AIDPair(c,a),new ArrayList<AID>( Arrays.asList(c,sr,gr,a) )  );
+		routes.put(  new AIDPair(a,b),new ArrayList<Node>( Arrays.asList(alpha,gattaca,aegis,bravo) )  );
+		routes.put(  new AIDPair(a,c),new ArrayList<Node>( Arrays.asList(alpha,gattaca,sprawl,charlie) )  );
+		routes.put(  new AIDPair(b,a),new ArrayList<Node>( Arrays.asList(bravo,aegis,gattaca,alpha) )  );
+		routes.put(  new AIDPair(b,c),new ArrayList<Node>( Arrays.asList(bravo,aegis,sprawl,charlie) )  );
+		routes.put(  new AIDPair(c,b),new ArrayList<Node>( Arrays.asList(charlie,sprawl,aegis,bravo) )  );
+		routes.put(  new AIDPair(c,a),new ArrayList<Node>( Arrays.asList(charlie,sprawl,gattaca,alpha) )  );
 		
 		//log.log(Logger.INFO,getLocalName() + "#example topology created:" + 
 		//					"\nRouters: " + gr.getLocalName() + ", " + sr.getLocalName() + ", " + ar.getLocalName() + 
