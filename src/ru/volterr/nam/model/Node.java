@@ -10,10 +10,13 @@ public class Node implements Serializable{
 
 	public static final int ROUTER_TYPE = 1;
 	public static final int USER_TYPE = 2;
+	public static final int STATUS_UP = 0;
+	public static final int STATUS_DOWN = 1;
 
 	private AID id;
 	private String name;
 	private int type;
+	private int status = STATUS_UP;
 	
 	public Node(AID id, int type){
 		this.id = id;
@@ -41,6 +44,12 @@ public class Node implements Serializable{
 		this.name = name;
 	}
 	
+	public int getStatus() {
+		return status;
+	}
+	public void setStatus(int status) {
+		this.status = status;
+	}
 	@Override
 	public String toString(){
 		return name;

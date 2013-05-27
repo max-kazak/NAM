@@ -26,6 +26,7 @@ public class ConnNewLink extends OneShotBehaviour {
 		msg.addReceiver(link.getA().getId());
 		msg.addReceiver(link.getZ().getId());
 		msg.setProtocol(Constants.INFORM_LINK);
+		msg.setConversationId(Constants.NULL_CID);
 		try {
 			msg.setContentObject(link);
 			myAgent.send(msg);

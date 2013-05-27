@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ru.volterr.nam.behaviours.user.UserReceiveMsg;
+import ru.volterr.nam.behaviours.user.UserRecvPing;
 import ru.volterr.nam.behaviours.user.UserStaticGenTraffic;
 import ru.volterr.nam.behaviours.user.UserSubscribe;
+import ru.volterr.nam.gui.views.RouterGUI;
+import ru.volterr.nam.gui.views.UserGUI;
 
 import jade.core.AID;
 import jade.core.Agent;
@@ -13,25 +16,33 @@ import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.gui.GuiAgent;
+import jade.gui.GuiEvent;
 import jade.util.Logger;
 
-public class UserAgent extends Agent {
+public class UserAgent extends GuiAgent {
 
-	public List<AID> subscribers = new ArrayList<AID>();
-	public AID gateway;
+	private List<AID> subscribers = new ArrayList<AID>();
+	private AID gateway;
 	public int dt = 1000;
 	
 	private Logger log;
+	
+	private UserGUI gui;
 	
 	public void setup(){
 		//init logger
 		log = Logger.getMyLogger(this.getClass().getName());
 		
+		//init gui
+		gui = new UserGUI(this);
+		gui.setVisible(false);
+		
 		//parse arguments
 		Object[] args = getArguments();
 		if(args!=null && args.length>0)
 			try{
-				this.gateway=(AID)args[0];
+				this.setGateway((AID)args[0]);
 				if (args[1] != null)
 					this.subscribers.addAll( (List<AID>) args[1] );
 				if (args[2] != null)
@@ -58,6 +69,7 @@ public class UserAgent extends Agent {
 		
 		addBehaviour(new UserReceiveMsg(this));
 		addBehaviour(new UserStaticGenTraffic(this, dt));
+		addBehaviour(new UserRecvPing());
 		
 	}
 	
@@ -73,20 +85,48 @@ public class UserAgent extends Agent {
 		
 	}
 	
-	synchronized public void addSubscribers(List<AID> targets){
+	public void addSubscribers(List<AID> targets){
 		subscribers.addAll(targets);
 	}
 	
-	synchronized public void addSubscriber(AID target){
+	public void addSubscriber(AID target){
 		subscribers.add(target);
 	}
 	
-	synchronized public void removeSubscribers(List<AID> targets){
+	public void removeSubscribers(List<AID> targets){
 		subscribers.removeAll(targets);
 	}
 	
-	synchronized public void removeSubscriber(AID target){
+	public void removeSubscriber(AID target){
 		subscribers.remove(target);
 	}
+
+
+	@Override
+	protected void onGuiEvent(GuiEvent ev) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	public void showGui(){
+		gui.setVisible(true);
+		gui.update();
+		
+	}
+
+
+	public AID getGateway() {
+		return gateway;
+	}
+
+
+	public void setGateway(AID gateway) {
+		this.gateway = gateway;
+	}
+	
+	public List<AID> getSubscribers() {
+		return subscribers;
+	}
+	
 
 }

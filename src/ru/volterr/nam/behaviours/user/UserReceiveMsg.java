@@ -4,6 +4,7 @@ import ru.volterr.nam.Constants;
 import ru.volterr.nam.agents.UserAgent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
 import jade.util.Logger;
 
 public class UserReceiveMsg extends CyclicBehaviour {
@@ -12,18 +13,20 @@ public class UserReceiveMsg extends CyclicBehaviour {
 	private ACLMessage L3msg;
 	private ACLMessage L2msg;
 	private Logger log;
+	private MessageTemplate mt;
 	
 	public UserReceiveMsg(UserAgent a){
 		super(a);
 		myUser = a;
 		
+		mt = MessageTemplate.MatchConversationId(Constants.NULL_CID);
 		//init logger
 		log = Logger.getMyLogger(this.getClass().getName());
 	}
 	
 	@Override
 	public void action() {
-		L2msg = myUser.receive();
+		L2msg = myUser.receive(mt);
 		if (L2msg != null) {
 			switch(L2msg.getPerformative()){
 				case ACLMessage.INFORM:
@@ -31,8 +34,7 @@ public class UserReceiveMsg extends CyclicBehaviour {
 						try{
 							L3msg = (ACLMessage) L2msg.getContentObject();
 							
-							log.log(Logger.INFO,myUser.getLocalName() + "# received message(" + 
-												L2msg.getConversationId() + ") from " + 
+							log.log(Logger.INFO,myUser.getLocalName() + "# received message from " + 
 												L3msg.getSender().getLocalName() + ": " + 
 												L3msg.getContent());
 						}catch(Exception e){
@@ -48,7 +50,11 @@ public class UserReceiveMsg extends CyclicBehaviour {
 					if(L2msg.getContent().equals("unsubscribe"))
 						myUser.removeSubscriber(L2msg.getSender());
 					break;
-						
+				case ACLMessage.REQUEST:
+					if(L2msg.getProtocol().equals(Constants.REQUEST_SHOW_GUI)){	
+						myUser.showGui();
+					}
+					break;
 			}
 			
 		}

@@ -7,6 +7,7 @@ import ru.volterr.nam.agents.UserAgent;
 import ru.volterr.nam.model.Link;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import jade.util.Logger;
 
@@ -19,29 +20,32 @@ public class RouterReceiveMsg extends CyclicBehaviour {
 
 	private Logger log;
 	
+	private MessageTemplate mt;
+	
 	public RouterReceiveMsg(RouterAgent a){
 		super(a);
 		myRouter = a;
 		//init logger
 		log = Logger.getMyLogger(this.getClass().getName());
+		
+		mt = MessageTemplate.MatchConversationId(Constants.NULL_CID);
 	}
 	
 	@Override
 	public void action() {
-		L2msg = myRouter.receive();
+		L2msg = myRouter.receive(mt);
 		if (L2msg != null) {
 			switch(L2msg.getPerformative()){
 				case ACLMessage.INFORM:
 					if(L2msg.getProtocol().equals(Constants.INFORM_MESSAGE)){
-						String msgid = L2msg.getConversationId();
-						
+												
 						//message log
-						log.log(Logger.INFO,myRouter.getLocalName() + "# received message(" + msgid + ") from: " 
+						log.log(Logger.INFO,myRouter.getLocalName() + "# received message from: " 
 													+ L2msg.getSender().getLocalName());
 					    try {
 					    	
 							L3msg = (ACLMessage) L2msg.getContentObject();
-							myRouter.addBehaviour(new RouterSendMsg(L3msg, myRouter, msgid));
+							myRouter.addBehaviour(new RouterSendMsg(L3msg, myRouter));
 							
 					    } catch (UnreadableException e) {
 							log.log(Logger.SEVERE,"can't cast L3msg from L2 exception: ",e);
@@ -69,6 +73,12 @@ public class RouterReceiveMsg extends CyclicBehaviour {
 					}
 				    break;
 				case ACLMessage.REQUEST:
+					if(L2msg.getProtocol().equals(Constants.REQUEST_SHOW_GUI)){
+						//message log
+						//log.log(Logger.INFO,myRouter.getLocalName() + "# received request to show gui");
+						
+						myRouter.showGui();	
+					}
 					break;
 			}
 		}

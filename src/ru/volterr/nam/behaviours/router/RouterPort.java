@@ -12,8 +12,12 @@ import ru.volterr.nam.model.Link;
 
 public class RouterPort extends CyclicBehaviour {
 
+	public static final int STATE_UP = 0;
+	public static final int STATE_DOWN = 1;
+	
 	private Link link;
 	private int drops = 0;
+	private int state = STATE_UP;
 	
 	private RouterAgent myRouter;
 	
@@ -60,6 +64,8 @@ public class RouterPort extends CyclicBehaviour {
 				log.log(Logger.INFO,myAgent.getLocalName() + "#message is placed in a queue");
 			}else{
 				drops++;
+				stack.add(msg);
+				stack.removeFirst();
 				log.log(Logger.INFO,myAgent.getLocalName() + "#queue overflow on link " + link.getName());
 			}
 			break;
@@ -74,18 +80,23 @@ public class RouterPort extends CyclicBehaviour {
 	
 	@Override
 	public void action() {
-		if((dt=wakeuptime-System.currentTimeMillis())<0)
-		{
-			//time is up or not setted up
-			if (sending != null){
-				send();
+		if(state==STATE_UP){
+			if((dt=wakeuptime-System.currentTimeMillis())<0){
+				//time is up or not setted up
+				if (sending != null){
+						send();
+				}else{
+					//unexpected launch. back to blocking state 
+					block();
+				}
 			}else{
-				//unexpected launch. back to blocking state 
-				block();
+				//still not time
+				block(dt);
 			}
 		}else{
-			//still not time
-			block(dt);
+			log.log(Logger.INFO,myAgent.getLocalName() + "#Router on other side is still not available ");
+			//nobody listening
+			block();
 		}
 	}
 	
@@ -94,16 +105,17 @@ public class RouterPort extends CyclicBehaviour {
 
 		myAgent.send(sending);
 		sending = null;
-		if(stack.size()>0){
-			sending = stack.removeFirst();
-			delay = getDelay();
-			wakeuptime = System.currentTimeMillis() + delay;
-			dt = delay;
-			block(dt);
-		}else{
-			link.setStatus(myRouter.getAID(),Link.FREE_STATUS);
-			block();
-		}
+		
+			if(stack.size()>0){
+				sending = stack.removeFirst();
+				delay = getDelay();
+				wakeuptime = System.currentTimeMillis() + delay;
+				dt = delay;
+				block(dt);
+			}else{
+				link.setStatus(myRouter.getAID(),Link.FREE_STATUS);
+				block();
+			}
 	}
 	
 
@@ -122,6 +134,16 @@ public class RouterPort extends CyclicBehaviour {
 	}
 	public int getDrops() {
 		return drops;
+	}
+	public int getState() {
+		return state;
+	}
+	public void setState(int state) {
+		if(state==STATE_DOWN)
+			wakeuptime=Long.MAX_VALUE;
+		else
+			wakeuptime=0;
+		this.state = state;
 	}
 	
 }

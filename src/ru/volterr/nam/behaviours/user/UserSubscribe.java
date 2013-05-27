@@ -3,6 +3,7 @@ package ru.volterr.nam.behaviours.user;
 import java.util.ArrayList;
 import java.util.List;
 
+import ru.volterr.nam.Constants;
 import ru.volterr.nam.agents.UserAgent;
 import jade.core.AID;
 import jade.core.behaviours.OneShotBehaviour;
@@ -43,6 +44,7 @@ public class UserSubscribe extends OneShotBehaviour {
 	public void action() {
 		
 		ACLMessage msg = new ACLMessage(ACLMessage.SUBSCRIBE);
+		msg.setConversationId(Constants.NULL_CID);
 		for(AID i: subscriptions)
 			msg.addReceiver(i);
 		if(subscr){

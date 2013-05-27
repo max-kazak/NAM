@@ -30,6 +30,7 @@ public class ConnSendRoute extends OneShotBehaviour {
 			ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 			msg.addReceiver(requester);
 			msg.setProtocol(Constants.INFORM_ROUTE);
+			msg.setConversationId(Constants.NULL_CID);
 			try {
 				msg.setContentObject(new AIDPair(dest,nextel));
 				myAgent.send(msg);

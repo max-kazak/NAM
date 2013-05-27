@@ -39,21 +39,19 @@ public class UserStaticGenTraffic extends CyclicBehaviour{
 		if((dt=wakeuptime-System.currentTimeMillis())<0)
 		{		
 			try {
-				int i = rand.nextInt(myUser.subscribers.size());
+				int i = rand.nextInt(myUser.getSubscribers().size());
 				ACLMessage msgL3 = new ACLMessage(ACLMessage.INFORM);
 				msgL3.setContent("42");
-				msgL3.addReceiver(myUser.subscribers.get(i));
+				msgL3.addReceiver(myUser.getSubscribers().get(i));
 				msgL3.setSender(myUser.getAID());
 				
 				ACLMessage msgL2 = new ACLMessage(ACLMessage.INFORM);
 				msgL2.setContentObject(msgL3);
-				String id = Long.toString( System.currentTimeMillis() );
-				msgL2.setConversationId(id);
-				msgL2.addReceiver(myUser.gateway);
+				msgL2.setConversationId(Constants.NULL_CID);
+				msgL2.addReceiver(myUser.getGateway());
 				msgL2.setProtocol(Constants.INFORM_MESSAGE);
 				
-				log.log(Logger.INFO,myUser.getLocalName() + "# sended message(" + id + ") to " 
-												+ myUser.subscribers.get(i).getLocalName());
+				log.log(Logger.INFO,myUser.getLocalName() + "# sended message to " + myUser.getSubscribers().get(i).getLocalName());
 				myUser.send(msgL2);
 			} catch (IOException e) {
 				log.log(Logger.SEVERE,"problems with output stream exception: ",e);

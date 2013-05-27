@@ -43,6 +43,7 @@ public class RouterRequestRoute extends OneShotBehaviour {
 			msg.addReceiver(connectorid);
 			msg.setContentObject(new AIDPair(src,dest));
 			msg.setProtocol(Constants.REQUEST_ROUTE);
+			msg.setConversationId(Constants.NULL_CID);
 			
 			log.log(Logger.INFO,myAgent.getLocalName() + "#Requesting route to " + dest.getLocalName() + "... (Connector:" + connectorid.getLocalName() + ").");
 			

@@ -13,18 +13,16 @@ import jade.util.Logger;
 public class RouterSendMsg extends OneShotBehaviour {
 
 	private ACLMessage L3msg;
-	private String msgid;
-	
+		
 	public RouterAgent myRouter;
 	private Logger log;
 	
 	
-	public RouterSendMsg(ACLMessage L3msg,RouterAgent myRouter,String msgid){
+	public RouterSendMsg(ACLMessage L3msg,RouterAgent myRouter){
 		super(myRouter);
 		this.L3msg=L3msg;
 		this.myRouter=myRouter;
-		this.msgid=msgid;
-		
+				
 		//init logger
 		log = Logger.getMyLogger(this.getClass().getName());
 	}
@@ -63,8 +61,9 @@ public class RouterSendMsg extends OneShotBehaviour {
 			ACLMessage L2msg = new ACLMessage(ACLMessage.INFORM);
 			L2msg.addReceiver(target);
 			L2msg.setContentObject(L3msg);
-			L2msg.setConversationId(msgid);
 			L2msg.setProtocol(Constants.INFORM_MESSAGE);
+			L2msg.setConversationId(Constants.NULL_CID);
+			
 			port.post(L2msg);
 		} catch (IOException e) {
 			log.log(Logger.SEVERE,"problem with output stream exception: ",e);
