@@ -33,58 +33,68 @@ public class RouterReceiveMsg extends CyclicBehaviour {
 	
 	@Override
 	public void action() {
-		L2msg = myRouter.receive(mt);
-		if (L2msg != null) {
-			switch(L2msg.getPerformative()){
-				case ACLMessage.INFORM:
-					if(L2msg.getProtocol().equals(Constants.INFORM_MESSAGE)){
-												
-						//message log
-						log.log(Logger.INFO,myRouter.getLocalName() + "# received message from: " 
-													+ L2msg.getSender().getLocalName());
-					    try {
-					    	
-							L3msg = (ACLMessage) L2msg.getContentObject();
-							myRouter.addBehaviour(new RouterSendMsg(L3msg, myRouter));
-							
-					    } catch (UnreadableException e) {
-							log.log(Logger.SEVERE,"can't cast L3msg from L2 exception: ",e);
-						}
-					}
-					if(L2msg.getProtocol().equals(Constants.INFORM_ROUTE)){
-						try{
-							AIDPair destNextPair = (AIDPair) L2msg.getContentObject();
-							myRouter.routetable.put(destNextPair.getFirst(), destNextPair.getSecond() );
-							//message log
-							log.log(Logger.INFO,myRouter.getLocalName() + "# received route to " + destNextPair.getFirst().getLocalName());
-						}catch(Exception e){
-							log.log(Logger.SEVERE,"get msg content Exception",e);
-						}
-					}
-					if(L2msg.getProtocol().equals(Constants.INFORM_LINK)){
-						try{
-							Link link = (Link) L2msg.getContentObject();
-							myRouter.addPort(link);
-							//message log
-							log.log(Logger.INFO,myRouter.getLocalName() + "# received new link (" + link.getA().getName() + ", " + link.getZ().getName() + ").");
-						}catch(Exception e){
-							log.log(Logger.SEVERE,"get msg content Exception",e);
-						}
-					}
-				    break;
-				case ACLMessage.REQUEST:
-					if(L2msg.getProtocol().equals(Constants.REQUEST_SHOW_GUI)){
-						//message log
-						//log.log(Logger.INFO,myRouter.getLocalName() + "# received request to show gui");
-						
-						myRouter.showGui();	
-					}
-					break;
-			}
+		while((L2msg = myRouter.receive(mt)) != null){
+			handlemsg(L2msg);
 		}
 		// Блокируем поведение, пока в очереди сообщений агента
 		// не появится хотя бы одно сообщение
 		block();
+	}
+	
+	private void handlemsg(ACLMessage L2msg){
+		switch(L2msg.getPerformative()){
+		case ACLMessage.INFORM:
+			if(L2msg.getProtocol().equals(Constants.INFORM_MESSAGE)){
+										
+				//message log
+				log.log(Logger.INFO,myRouter.getLocalName() + "# received message from: " 
+											+ L2msg.getSender().getLocalName());
+			    try {
+			    	
+					L3msg = (ACLMessage) L2msg.getContentObject();
+					myRouter.addBehaviour(new RouterSendMsg(L3msg, myRouter));
+					
+			    } catch (UnreadableException e) {
+					log.log(Logger.SEVERE,"can't cast L3msg from L2 exception: ",e);
+				}
+			}
+			if(L2msg.getProtocol().equals(Constants.INFORM_ROUTE)){
+				try{
+					AIDPair destNextPair = (AIDPair) L2msg.getContentObject();
+					myRouter.routetable.put(destNextPair.getFirst(), destNextPair.getSecond() );
+					//message log
+					log.log(Logger.INFO,myRouter.getLocalName() + "# received route to " + destNextPair.getFirst().getLocalName());
+				}catch(Exception e){
+					log.log(Logger.SEVERE,"get msg content Exception",e);
+				}
+			}
+			if(L2msg.getProtocol().equals(Constants.INFORM_LINK)){
+				try{
+					Link link = (Link) L2msg.getContentObject();
+					myRouter.addPort(link);
+					//message log
+					log.log(Logger.INFO,myRouter.getLocalName() + "# received new link (" + link.getA().getName() + ", " + link.getZ().getName() + ").");
+				}catch(Exception e){
+					log.log(Logger.SEVERE,"get msg content Exception",e);
+				}
+			}
+			if(L2msg.getProtocol().equals(Constants.INFORM_STARTMODELING)){
+				try {
+					myRouter.startModeling((Long) L2msg.getContentObject());
+				} catch (UnreadableException e) {
+					log.log(Logger.SEVERE, "Cast Exception:", e);
+				}
+			}
+		    break;
+		case ACLMessage.REQUEST:
+			if(L2msg.getProtocol().equals(Constants.REQUEST_SHOW_GUI)){
+				//message log
+				//log.log(Logger.INFO,myRouter.getLocalName() + "# received request to show gui");
+				
+				myRouter.showGui();	
+			}
+			break;
+		}
 	}
 
 }

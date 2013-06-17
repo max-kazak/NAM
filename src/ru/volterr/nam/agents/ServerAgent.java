@@ -1,5 +1,12 @@
 package ru.volterr.nam.agents;
 
+import java.util.List;
+
+import ru.volterr.nam.behaviours.user.RecvPing;
+import ru.volterr.nam.behaviours.user.ServerReceiveMsg;
+import ru.volterr.nam.behaviours.user.UserReceiveMsg;
+import ru.volterr.nam.behaviours.user.UserStaticGenTraffic;
+import ru.volterr.nam.gui.views.UserGUI;
 import jade.core.AID;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
@@ -9,41 +16,27 @@ import jade.gui.GuiAgent;
 import jade.gui.GuiEvent;
 import jade.util.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
+public class ServerAgent extends GuiAgent {
 
-import ru.volterr.nam.behaviours.user.RecvPing;
-import ru.volterr.nam.behaviours.user.UserReceiveMsg;
-import ru.volterr.nam.behaviours.user.UserStaticGenTraffic;
-import ru.volterr.nam.behaviours.user.UserSubscribe;
-import ru.volterr.nam.gui.views.UserGUI;
-
-@SuppressWarnings("serial")
-public class UserAgent extends GuiAgent {
-
-	private List<AID> subscriptions = new ArrayList<AID>();
 	private AID gateway;
-	//public int dt = 1000;	- deprecated generation parameter
-	
+
 	private Logger log;
 	
-	private UserGUI gui;
+	//private ServerGUI gui;	- TODO
 	
 	public void setup(){
 		//init logger
 		log = Logger.getMyLogger(this.getClass().getName());
 		
 		//init gui
-		gui = new UserGUI(this);
-		gui.setVisible(false);
+		//gui = new ServerGUI(this); - TODO
+		//gui.setVisible(false);
 		
 		//parse arguments
 		Object[] args = getArguments();
 		if(args!=null && args.length>0)
 			try{
 				this.setGateway((AID)args[0]);
-				if (args[1] != null)
-					this.subscriptions.addAll( (List<AID>) args[1] );
 			}catch(Exception e){
 				log.log(Logger.SEVERE, "Exception:", e);
 			}
@@ -54,8 +47,8 @@ public class UserAgent extends GuiAgent {
 		DFAgentDescription dfd = new DFAgentDescription();
 		dfd.setName(getAID());
 		ServiceDescription sd = new ServiceDescription();
-		sd.setType("User");
-		sd.setName(getLocalName()+" User");
+		sd.setType("Server");
+		sd.setName(getLocalName()+" Server");
 		dfd.addServices(sd);
 		try {
 			DFService.register(this, dfd);
@@ -64,7 +57,7 @@ public class UserAgent extends GuiAgent {
 			fe.printStackTrace();
 		}
 		
-		addBehaviour(new UserReceiveMsg(this));
+		addBehaviour(new ServerReceiveMsg(this));
 		//addBehaviour(new UserStaticGenTraffic(this, dt)); - deprecated, now activates only at modeling procedure
 		addBehaviour(new RecvPing());
 		
@@ -78,45 +71,25 @@ public class UserAgent extends GuiAgent {
 		}
 		catch (FIPAException fe) {
 			fe.printStackTrace();
-		}
-		
+		}	
 	}
 	
 	public void startModeling(Long time){
 		log.log(Logger.INFO,getLocalName()+"#starts modeling procedure");
-		addBehaviour(new UserStaticGenTraffic(this,time));
+		//TODO - clear data
 	}
 	
-	public void addSubscriptions(List<AID> targets){
-		subscriptions.addAll(targets);
-	}
-	
-	public void addSubscription(AID target){
-		subscriptions.add(target);
-	}
-	
-	public void removeSubscribers(List<AID> targets){
-		subscriptions.removeAll(targets);
-	}
-	
-	public void removeSubscriber(AID target){
-		subscriptions.remove(target);
-	}
-
-
 	@Override
 	protected void onGuiEvent(GuiEvent ev) {
 		// TODO Auto-generated method stub
-		
+
+	}
+
+	public void showGui(){
+		//gui.setVisible(true); - TODO
+
 	}
 	
-	public void showGui(){
-		gui.setVisible(true);
-		gui.update();
-		
-	}
-
-
 	public AID getGateway() {
 		return gateway;
 	}
@@ -126,9 +99,4 @@ public class UserAgent extends GuiAgent {
 		this.gateway = gateway;
 	}
 	
-	public List<AID> getSubscriptions() {
-		return subscriptions;
-	}
-	
-
 }

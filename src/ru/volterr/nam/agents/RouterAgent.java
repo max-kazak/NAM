@@ -21,6 +21,7 @@ import ru.volterr.nam.behaviours.user.UserStaticGenTraffic;
 import ru.volterr.nam.behaviours.user.UserSubscribe;
 import ru.volterr.nam.gui.views.RouterGUI;
 import ru.volterr.nam.model.Link;
+import ru.volterr.nam.model.Node;
 
 import jade.core.AID;
 import jade.core.Agent;
@@ -84,8 +85,8 @@ public class RouterAgent extends GuiAgent {
 		//add behaviours
 		addBehaviour(new RouterReceiveMsg(this));
 		addBehaviour(new RouterRecvPing());
-		addBehaviour(new RouterPingNeighbours(this));
-		addBehaviour(new RouterCoffee(this));
+		//addBehaviour(new RouterPingNeighbours(this));
+		//addBehaviour(new RouterCoffee(this)); - deprecated, only after modeling starts
 	}
 	
 	protected void takeDown() {
@@ -115,6 +116,7 @@ public class RouterAgent extends GuiAgent {
 			ports.put(link.getA().getId(), port);
 		}
 		addBehaviour(port);
+		link.setFprob(fprob);
 	}
 	
 	public void delPort(Link link){
@@ -151,9 +153,28 @@ public class RouterAgent extends GuiAgent {
 			if( (entry.getValue().getState()==RouterPort.STATE_DOWN)&&(aids.contains(entry.getKey())) ){
 				entry.getValue().setState(RouterPort.STATE_UP);
 			}
+			//delete from routetable
+			routetable.clear();
 		}
 	}
 
+	private void setAllLinksUnavailable(){
+		List<RouterPort> list = new ArrayList<RouterPort>(ports.values());
+		for(RouterPort p:list){
+			p.getLink().setAvailable(false);
+		}
+	}
+	
+	private void setAllLinksAvailable(){
+		List<RouterPort> list = new ArrayList<RouterPort>(ports.values());
+		Link l;
+		for(RouterPort p:list){
+			l=p.getLink();
+			if( l.getOppositeNode(getAID()).getStatus()==Node.STATUS_UP )
+				l.setAvailable(true);
+		}
+	}
+	
 	public void splitcoffee() {
 		DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd  = new ServiceDescription();
@@ -171,14 +192,21 @@ public class RouterAgent extends GuiAgent {
 			msg.setConversationId(Constants.NULL_CID);
 			msg.setContent("down");
 			send(msg);
+			setAllLinksUnavailable();
 			//here router sleeps
-			wait(10000);
+			Thread.sleep(20000);
 			//here it wakes up
 			msg.setContent("up");
 			send(msg);
+			setAllLinksAvailable();
 		}catch(Exception e){
 			log.log(Logger.INFO, "Exception:", e);
 		}
+		
+	}
+
+	public void startModeling(Long time) {
+		log.log(Logger.INFO,getLocalName()+"#starts modeling procedure");
 		
 	}
 	

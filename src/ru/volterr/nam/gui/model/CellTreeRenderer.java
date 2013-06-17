@@ -11,10 +11,12 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 public class CellTreeRenderer extends DefaultTreeCellRenderer {
 	ImageIcon routersIcon;
 	ImageIcon usersIcon;
-
+	ImageIcon serversIcon;
+	
     public CellTreeRenderer() {
     	routersIcon = new ImageIcon("res/images/img16x16/routers.png");
     	usersIcon = new ImageIcon("res/images/img16x16/users.png");
+    	serversIcon = new ImageIcon("res/images/img16x16/servers.png");
     }
 
     public Component getTreeCellRendererComponent(
@@ -39,8 +41,13 @@ public class CellTreeRenderer extends DefaultTreeCellRenderer {
                 setIcon(usersIcon);
                 setToolTipText("List of users in the network");
             } else {
-            	setIcon(null);
-                setToolTipText(null);
+            	if (!leaf && isServersRoot(value)) {
+                    setIcon(serversIcon);
+                    setToolTipText("List of users in the network");
+                }else{
+                	setIcon(null);
+                	setToolTipText(null);
+                }
             } 
         } 
 
@@ -57,5 +64,11 @@ public class CellTreeRenderer extends DefaultTreeCellRenderer {
     	return ((String)((DefaultMutableTreeNode)value).
     			getUserObject()).
     			equals("Users");
+    }
+    
+    private boolean isServersRoot(Object value) {
+    	return ((String)((DefaultMutableTreeNode)value).
+    			getUserObject()).
+    			equals("Servers");
     }
 }

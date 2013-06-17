@@ -6,11 +6,11 @@ import jade.lang.acl.MessageTemplate;
 import jade.util.Logger;
 import ru.volterr.nam.Constants;
 
-public class UserRecvPing extends CyclicBehaviour{
+public class RecvPing extends CyclicBehaviour{
 	MessageTemplate mt = MessageTemplate.MatchProtocol(Constants.REQUEST_PING);
 	private Logger log;
 	
-	public UserRecvPing() {
+	public RecvPing() {
 		super();
 		log = Logger.getMyLogger(this.getClass().getName());
 	}

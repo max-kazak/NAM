@@ -1,6 +1,5 @@
 package ru.volterr.nam.behaviours.user;
 
-import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.util.Logger;
 
@@ -10,39 +9,39 @@ import java.util.Random;
 import ru.volterr.nam.Constants;
 import ru.volterr.nam.agents.UserAgent;
 
-public class UserStaticGenTraffic extends CyclicBehaviour{
+@SuppressWarnings("serial")
+public class UserStaticGenTraffic extends UserGenTraffic{
 
-	private long dt,
-				 wakeuptime=0,
-				 delay;
+
 	private Random rand = new Random();
-	
-	
-	protected UserAgent myUser;
+	private double sprob = 0.7;
 	private Logger log;
 	
 	
-	public UserStaticGenTraffic(UserAgent a, int delay) {
-		super(a);
-		myUser = a;
-		this.delay=delay;
-		dt=delay;
-		
+	public UserStaticGenTraffic(UserAgent a,long time) {
+		super(a,time);
+		//init logger
+		log = Logger.getMyLogger(this.getClass().getName());
+	}
+	public UserStaticGenTraffic(UserAgent a,long time,double sprob) {
+		super(a,time);
+		this.sprob = sprob;
 		//init logger
 		log = Logger.getMyLogger(this.getClass().getName());
 	}
 	
 	//generates and sends messages
 	@Override
-	public void action() {
-		
-		if((dt=wakeuptime-System.currentTimeMillis())<0)
-		{		
+	void generate() {
+		if(rand.nextDouble()<sprob){
 			try {
-				int i = rand.nextInt(myUser.getSubscribers().size());
+				int i = rand.
+						nextInt(myUser.
+						getSubscriptions().
+						size());
 				ACLMessage msgL3 = new ACLMessage(ACLMessage.INFORM);
 				msgL3.setContent("42");
-				msgL3.addReceiver(myUser.getSubscribers().get(i));
+				msgL3.addReceiver(myUser.getSubscriptions().get(i));
 				msgL3.setSender(myUser.getAID());
 				
 				ACLMessage msgL2 = new ACLMessage(ACLMessage.INFORM);
@@ -51,7 +50,7 @@ public class UserStaticGenTraffic extends CyclicBehaviour{
 				msgL2.addReceiver(myUser.getGateway());
 				msgL2.setProtocol(Constants.INFORM_MESSAGE);
 				
-				log.log(Logger.INFO,myUser.getLocalName() + "# sended message to " + myUser.getSubscribers().get(i).getLocalName());
+				log.log(Logger.INFO,myUser.getLocalName() + "# sended message to " + myUser.getSubscriptions().get(i).getLocalName());
 				myUser.send(msgL2);
 			} catch (IOException e) {
 				log.log(Logger.SEVERE,"problems with output stream exception: ",e);
@@ -61,13 +60,7 @@ public class UserStaticGenTraffic extends CyclicBehaviour{
 			} catch (Exception e){
 				log.log(Logger.SEVERE,"Exception",e);
 			}
-			
-			wakeuptime = System.currentTimeMillis()+delay;
-			dt=delay;
-
 		}
-		
-		block(dt);
 	}
 
 }

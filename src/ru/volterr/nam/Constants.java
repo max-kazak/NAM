@@ -10,6 +10,7 @@ public class Constants {
 	public static final String REQUEST_PING="ping";
 	public static final String CONFIRM_PONG="pong";
 	public static final String INFORM_COFFEE = "who did it?";
+	public static final String INFORM_STARTMODELING = "prepare for modeling";
 	
 	//CID
 	public static final String NULL_CID="null"; //no conversation purpose
@@ -19,5 +20,6 @@ public class Constants {
 	public static final int ADD_ROUTER_GUIEVENT = 1;
 	public static final int ADD_USER_GUIEVENT = 2;
 	public static final int SHOW_GUI_GUIEVENT = 3;
+	public static final int STARTMODELING_GUIEVENT = 4;
 	
 }

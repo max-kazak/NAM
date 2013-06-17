@@ -26,9 +26,12 @@ import ru.volterr.nam.model.Link;
 import ru.volterr.nam.model.Node;
 import jade.core.AID;
 import jade.core.Agent;
+import jade.domain.AMSService;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
+import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.gui.GuiAgent;
 import jade.gui.GuiEvent;
@@ -100,6 +103,31 @@ public class Connector extends GuiAgent {
 		
 	}
 
+	private void startModeling(Long l){
+		AMSAgentDescription [] agents = null;
+		SearchConstraints c = new SearchConstraints();
+        c.setMaxResults ( new Long(-1) );
+        
+		try {
+			agents = AMSService.search( this, new AMSAgentDescription (), c );
+			
+			ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+			msg.setProtocol(Constants.INFORM_STARTMODELING);
+			msg.setConversationId(Constants.NULL_CID);
+			msg.setContentObject(l);
+			for(AMSAgentDescription i:agents){
+				msg.addReceiver(i.getName());
+			}
+			
+			log.log(Logger.INFO,getLocalName() + "#starting modeling procedure. stand by...");
+			
+			send(msg);
+			
+		} catch (Exception e) {
+			log.log(Logger.SEVERE, "Exception: " ,e);
+		} 
+	}
+	
 	@Override
 	protected void onGuiEvent(GuiEvent ev) {
 		switch(ev.getType()){
@@ -113,6 +141,10 @@ public class Connector extends GuiAgent {
 			msg.setProtocol(Constants.REQUEST_SHOW_GUI);
 			msg.setConversationId(Constants.NULL_CID);
 			send(msg);
+			break;
+		case Constants.STARTMODELING_GUIEVENT:
+			startModeling( ((Long)ev.getParameter(0)) * 1000 );
+			//example();
 			break;
 		}
 		
@@ -143,14 +175,13 @@ public class Connector extends GuiAgent {
 		return addRouter(agentid,1.0);
 	}
 	
-	private Node addUser(AID agentid, String gateway, List<AID> subscribers, List<AID> subscriptions){
+	private Node addUser(AID agentid, String gateway, List<AID> subscriptions){
 		AgentController a;
 		Object [] args;
 		
-		args = new Object[3];
+		args = new Object[2];
 		args[0]=new AID(gateway,AID.ISLOCALNAME);
-		args[1]=subscribers;
-		args[2]=subscriptions;
+		args[1]=subscriptions;
 		
 		Node node = new Node(agentid,Node.USER_TYPE);
 		nodes.put(agentid, node);
@@ -166,8 +197,35 @@ public class Connector extends GuiAgent {
 		}
 		return null;
 	}	
-	private Node addUser(AID agentid, AID gatewayid, List<AID> subscribers, List<AID> subscriptions){
-		return addUser(agentid, gatewayid.getLocalName(), subscribers, subscriptions);
+	
+	private Node addUser(AID agentid, AID gatewayid, List<AID> subscriptions){
+		return addUser(agentid, gatewayid.getLocalName(), subscriptions);
+	}
+	
+	private Node addServer(AID agentid, String gateway){
+		AgentController a;
+		Object [] args;
+		
+		args = new Object[1];
+		args[0]=new AID(gateway,AID.ISLOCALNAME);
+		
+		Node node = new Node(agentid,Node.SERVER_TYPE);
+		nodes.put(agentid, node);
+		
+		try {
+			a = containercontr.createNewAgent(agentid.getLocalName(), "ru.volterr.nam.agents.ServerAgent", args);
+			a.start();
+			graph.addVertex(node);
+			gui.graphRepaint();
+			return node;
+		} catch (StaleProxyException e) {
+			log.log(Logger.SEVERE,"Create new agent exception:",e);
+		}
+		return null;
+	}	
+	
+	private Node addServer(AID agentid, AID gatewayid){
+		return addServer(agentid, gatewayid.getLocalName());
 	}
 	
 	private void addLink(Link link){
@@ -281,28 +339,53 @@ public class Connector extends GuiAgent {
 		//routers
 		Node gattaca = addRouter(new AID("Gattaca",AID.ISLOCALNAME)),
 			 sprawl = addRouter(new AID("Sprawl",AID.ISLOCALNAME),0.5),
-			 aegis = addRouter(new AID("Aegis7",AID.ISLOCALNAME));
+			 aegis = addRouter(new AID("Aegis7",AID.ISLOCALNAME)),
+			 tauvolantis = addRouter(new AID("TauVolantis",AID.ISLOCALNAME)),
+			 titan = addRouter(new AID("Titan",AID.ISLOCALNAME));
+		//servers
+		AID ftp = new AID("FTP",AID.ISLOCALNAME),
+			samba = new AID("SAMBA",AID.ISLOCALNAME),
+			http = new AID("HTTP",AID.ISLOCALNAME);
+		Node ftpnode = addServer(ftp,tauvolantis.getId()),
+			 sambanode = addServer(samba,titan.getId()),
+			 httpnode = addServer(http,tauvolantis.getId());
 		//users
 		AID a = new AID("Alpha",AID.ISLOCALNAME),
 			b = new AID("Bravo",AID.ISLOCALNAME),
 			c = new AID("Charlie",AID.ISLOCALNAME);
-		Node alpha = addUser(a,gattaca.getId(),new ArrayList<AID>(Arrays.asList(c,b)),null),
-			 bravo = addUser(b,aegis.getId(),new ArrayList<AID>(Arrays.asList(c)),null),
-			 charlie = addUser(c,sprawl.getId(),new ArrayList<AID>(Arrays.asList(a)),null);
+		Node alpha = addUser(a,gattaca.getId(),new ArrayList<AID>(Arrays.asList(ftp,samba,http))),
+			 bravo = addUser(b,aegis.getId(),new ArrayList<AID>(Arrays.asList(ftp,samba))),
+			 charlie = addUser(c,sprawl.getId(),new ArrayList<AID>(Arrays.asList(http)));
 		//links
-		Link alpha_gattaca = new Link(alpha, gattaca, 1000),
+		Link alpha_gattaca = new Link(alpha, gattaca, 1000),	//users to defaultgateway - TODO automated
 			 bravo_aegis = new Link(bravo, aegis, 1000),
 			 charlie_sprawl = new Link(charlie, sprawl, 1000),
-			 gattaca_aegis = new Link(gattaca, aegis, 1000),
+			 
+			 ftp_tauvolantis = new Link(ftpnode,tauvolantis, 1000),	//servers to defaultgateway - TODO automated
+			 samba_titan = new Link(sambanode,titan, 1000),
+			 http_tauvolantis = new Link(httpnode,tauvolantis, 1000),
+			 
+			 gattaca_aegis = new Link(gattaca, aegis, 1000),	//interconnections between routers
 			 gattaca_sprawl = new Link(gattaca, sprawl, 2000),
-			 sprawl_aegis = new Link(sprawl, aegis, 500);
+			 sprawl_aegis = new Link(sprawl, aegis, 500),
+			 tauvolantis_gattaca = new Link(tauvolantis,gattaca, 1000),
+			 titan_tauvolantis = new Link(titan,tauvolantis, 2000),
+			 titan_aegis = new Link(titan,aegis, 3000);
 		
 		addLink(alpha_gattaca);
 		addLink(bravo_aegis);
 		addLink(charlie_sprawl);
+		
+		addLink(ftp_tauvolantis);
+		addLink(samba_titan);
+		addLink(http_tauvolantis);
+		
 		addLink(gattaca_aegis);
 		addLink(gattaca_sprawl);
 		addLink(sprawl_aegis);
+		addLink(tauvolantis_gattaca);
+		addLink(titan_tauvolantis);
+		addLink(titan_aegis);
 		
 		//routes
 		/*routes.put(  new AIDPair(a,b),new ArrayList<Node>( Arrays.asList(alpha,gattaca,aegis,bravo) )  );

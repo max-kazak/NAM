@@ -40,13 +40,13 @@ public class UserGUI extends JFrame {
 	}
 
 	private void loadSubscribers() {
-		myAgent.getSubscribers();
+		myAgent.getSubscriptions();
 		DefaultTableModel model = (DefaultTableModel)subscrTable.getModel();
 		//System.out.println("rows: "+model.getRowCount());
 		/*for(int i = 0;i<model.getRowCount();i++)
 			model.removeRow(i);*/
 		model.getDataVector().removeAllElements();
-		for(AID sub:myAgent.getSubscribers())
+		for(AID sub:myAgent.getSubscriptions())
 			model.addRow(new Object[]{sub.getLocalName()});
 			 
 	}

@@ -1,24 +1,25 @@
 package ru.volterr.nam.behaviours.user;
 
 import ru.volterr.nam.Constants;
-import ru.volterr.nam.agents.UserAgent;
+import ru.volterr.nam.agents.ServerAgent;
+
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 import jade.util.Logger;
 
-public class UserReceiveMsg extends CyclicBehaviour {
+public class ServerReceiveMsg extends CyclicBehaviour {
 
-	protected UserAgent myUser;
+	protected ServerAgent myServer;
 	private ACLMessage L3msg;
 	private ACLMessage L2msg;
 	private Logger log;
 	private MessageTemplate mt;
 	
-	public UserReceiveMsg(UserAgent a){
+	public ServerReceiveMsg(ServerAgent a){
 		super(a);
-		myUser = a;
+		myServer = a;
 		
 		mt = MessageTemplate.MatchConversationId(Constants.NULL_CID);
 		//init logger
@@ -27,24 +28,23 @@ public class UserReceiveMsg extends CyclicBehaviour {
 	
 	@Override
 	public void action() {
-		L2msg = myUser.receive(mt);
+		L2msg = myServer.receive(mt);
 		if (L2msg != null) {
-			handlemsg();
+			handlemsg(L2msg);
 		}
-			
 		// Блокируем поведение, пока в очереди сообщений агента
 		// не появится хотя бы одно сообщение
 		block();
 	}
-
-	private void handlemsg(){
+	
+	private void handlemsg(ACLMessage L2msg){
 		switch(L2msg.getPerformative()){
 		case ACLMessage.INFORM:
-			/*if(L2msg.getProtocol().equals(Constants.INFORM_MESSAGE)){
+			if(L2msg.getProtocol().equals(Constants.INFORM_MESSAGE)){
 				try{
 					L3msg = (ACLMessage) L2msg.getContentObject();
 					
-					log.log(Logger.INFO,myUser.getLocalName() + "# received message from " + 
+					log.log(Logger.INFO,myServer.getLocalName() + "# received message from " + 
 										L3msg.getSender().getLocalName() + ": " + 
 										L3msg.getContent());
 				}catch(Exception e){
@@ -52,10 +52,10 @@ public class UserReceiveMsg extends CyclicBehaviour {
 										"L2msg has wrong format and doesn't contain " +
 										"L3msg inside of itself \nException: ",e);
 				}
-			}*/
+			}
 			if(L2msg.getProtocol().equals(Constants.INFORM_STARTMODELING)){
 				try {
-					myUser.startModeling((Long) L2msg.getContentObject());
+					myServer.startModeling((Long) L2msg.getContentObject());
 				} catch (UnreadableException e) {
 					log.log(Logger.SEVERE, "Cast Exception:", e);
 				}
@@ -69,9 +69,11 @@ public class UserReceiveMsg extends CyclicBehaviour {
 			break;*/
 		case ACLMessage.REQUEST:
 			if(L2msg.getProtocol().equals(Constants.REQUEST_SHOW_GUI)){	
-				myUser.showGui();
+				myServer.showGui();
 			}
 			break;
 		}
+	
 	}
+
 }

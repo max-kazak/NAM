@@ -10,6 +10,9 @@ public class Node implements Serializable{
 
 	public static final int ROUTER_TYPE = 1;
 	public static final int USER_TYPE = 2;
+	public static final int SERVER_TYPE = 23;
+	
+	
 	public static final int STATUS_UP = 0;
 	public static final int STATUS_DOWN = 1;
 

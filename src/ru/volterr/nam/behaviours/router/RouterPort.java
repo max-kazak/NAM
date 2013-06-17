@@ -22,7 +22,7 @@ public class RouterPort extends CyclicBehaviour {
 	private RouterAgent myRouter;
 	
 	private LinkedList<ACLMessage> stack = new LinkedList<ACLMessage>();
-	private int stacksize = 2;
+	private int stacksize = 20;
 	private ACLMessage sending;
 	
 	private long dt,
@@ -120,7 +120,7 @@ public class RouterPort extends CyclicBehaviour {
 	
 
 	private long getDelay(){
-		return 1500*1000/link.getBandwidth();
+		return 1500*100/link.getBandwidth();
 	}
 	private long getDelay(ACLMessage msg){
 		//TODO

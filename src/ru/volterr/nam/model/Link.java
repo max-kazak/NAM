@@ -17,8 +17,10 @@ public class Link implements Serializable {
 	private EdgeType type = EdgeType.UNDIRECTED;
 	private String name;
 	private int astatus = 0, zstatus = 0;
-	private long bandwidth;
 	
+	private long bandwidth;
+	private boolean available=true;
+	private double fprob = 1.0;
 	//public Link(){}
 	//public Link(long bandwidth){
 	//	this.bandwidth=bandwidth;
@@ -66,7 +68,18 @@ public class Link implements Serializable {
 	public void setZ(Node z) {
 		this.z = z;
 	}
-
+	
+	public Node getOppositeNode(Node my){
+		if( z.equals(my) )
+			return a;
+		else return z;	
+	}
+	public Node getOppositeNode(AID my){
+		if( z.getId().equals(my) )
+			return a;
+		else return z;	
+	}
+	
 	public String getName() {
 		return name;
 	}
@@ -81,6 +94,19 @@ public class Link implements Serializable {
 		this.type = type;
 	}
 	
+	public boolean isAvailable() {
+		return available;
+	}
+	public void setAvailable(boolean available) {
+		this.available = available;
+	}
+	public double getFprob() {
+		return fprob;
+	}
+	public void setFprob(double fprob) {
+		if(fprob<this.fprob)
+			this.fprob = fprob;
+	}
 	@Override
 	public String toString(){
 		return name;

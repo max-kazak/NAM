@@ -54,6 +54,10 @@ import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
 import edu.uci.ics.jung.visualization.renderers.Renderer.VertexLabel.Position;
 
 import javax.swing.JMenuBar;
+import javax.swing.JSeparator;
+import javax.swing.SwingConstants;
+import javax.swing.JTextField;
+import javax.swing.JFormattedTextField;
 
 
 public class ConnectorGUI extends JFrame{
@@ -61,10 +65,12 @@ public class ConnectorGUI extends JFrame{
 	private Connector myAgent;
 	
 	private JPanel contentPane;
-	private JButton btnAddRouter,btnAddUser,btnTest,btnRepaint;
+	private JButton btnTest;
+	private JButton btnStart;
 	private JTree tree;
 		private DefaultMutableTreeNode usersNode;
 		private DefaultMutableTreeNode routersNode;
+		private DefaultMutableTreeNode serversNode;
 	private JLabel lblResult;
 		
 	VisualizationViewer<Node,Link> vv;
@@ -73,6 +79,7 @@ public class ConnectorGUI extends JFrame{
 		
 	private JPanel panel;
 	private JMenuBar menuBar;
+	private JTextField timeField;
 	
 	/**
 	 * Create the frame.
@@ -94,20 +101,23 @@ public class ConnectorGUI extends JFrame{
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				
 				GuiEvent ge = new GuiEvent(this, Constants.TEST_GUIEVENT);
 				myAgent.postGuiEvent(ge);
 			}
 			
 		});
 		
-		btnRepaint.addActionListener(new ActionListener(){
+		btnStart.addActionListener(new ActionListener(){
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				layout.reset();
-				layout.setGraph(myAgent.graph);
-				vv.repaint();
+				GuiEvent ge = new GuiEvent(this, Constants.STARTMODELING_GUIEVENT);
+				try{
+					ge.addParameter( Long.decode(timeField.getText()) );
+					myAgent.postGuiEvent(ge);				
+				}catch(NumberFormatException e){
+					timeField.setText("wrong number!");
+				}
 			}
 			
 		});
@@ -134,7 +144,7 @@ public class ConnectorGUI extends JFrame{
 
 	private void initComponents(){
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 834, 535);
+		setBounds(100, 100, 1074, 492);
 		
 		menuBar = new JMenuBar();
 		menuBar.add(modeMenu);
@@ -142,16 +152,11 @@ public class ConnectorGUI extends JFrame{
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
-		
-		btnAddRouter = new JButton("Add Router");
-		btnAddUser = new JButton("Add User");
 		btnTest = new JButton("Test");
 		
 		lblResult = new JLabel("Result:");
 		
 		panel = new JPanel();
-		
-		btnRepaint = new JButton("Repaint");
 		
 		tree = new JTree();
 		tree.setFont(new Font("Tahoma", Font.PLAIN, 15));
@@ -165,59 +170,90 @@ public class ConnectorGUI extends JFrame{
 							usersNode.add(new DefaultMutableTreeNode("Bravo"));
 							usersNode.add(new DefaultMutableTreeNode("Charlie"));
 						add(usersNode);
+						serversNode = new DefaultMutableTreeNode("Servers");
+							serversNode.add(new DefaultMutableTreeNode("FTP"));
+							serversNode.add(new DefaultMutableTreeNode("SAMBA"));
+							serversNode.add(new DefaultMutableTreeNode("HTTP"));
+						add(serversNode);
 						routersNode = new DefaultMutableTreeNode("Routers");
 							routersNode.add(new DefaultMutableTreeNode("Aegis7"));
 							routersNode.add(new DefaultMutableTreeNode("Gattaca"));
 							routersNode.add(new DefaultMutableTreeNode("Sprawl"));
+							routersNode.add(new DefaultMutableTreeNode("TauVolantis"));
+							routersNode.add(new DefaultMutableTreeNode("Titan"));
 						add(routersNode);
 					}
 				}
 			));
 		
+		JSeparator separator = new JSeparator();
+		separator.setOrientation(SwingConstants.VERTICAL);
+		
+		btnStart = new JButton("START");
+		
+		timeField = new JTextField();
+		timeField.setText("120");
+		timeField.setColumns(10);
+		
+		JLabel lblExperimentTime = new JLabel("Experiment Time:");
+		lblExperimentTime.setFont(new Font("Tahoma", Font.PLAIN, 13));
+		
+		JLabel lblS = new JLabel("s");
+		
 		GroupLayout gl_contentPane = new GroupLayout(contentPane);
 		gl_contentPane.setHorizontalGroup(
 			gl_contentPane.createParallelGroup(Alignment.LEADING)
 				.addGroup(gl_contentPane.createSequentialGroup()
+					.addContainerGap()
+					.addComponent(tree, GroupLayout.PREFERRED_SIZE, 174, GroupLayout.PREFERRED_SIZE)
+					.addGap(32)
+					.addComponent(panel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+					.addGap(18)
+					.addComponent(separator, GroupLayout.PREFERRED_SIZE, 10, GroupLayout.PREFERRED_SIZE)
 					.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
+						.addGroup(gl_contentPane.createParallelGroup(Alignment.TRAILING)
+							.addGroup(gl_contentPane.createSequentialGroup()
+								.addPreferredGap(ComponentPlacement.RELATED)
+								.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
+									.addComponent(lblResult)
+									.addComponent(btnTest))
+								.addContainerGap(135, Short.MAX_VALUE))
+							.addGroup(gl_contentPane.createSequentialGroup()
+								.addGap(4)
+								.addComponent(lblExperimentTime)
+								.addPreferredGap(ComponentPlacement.UNRELATED)
+								.addComponent(timeField, GroupLayout.PREFERRED_SIZE, 53, GroupLayout.PREFERRED_SIZE)
+								.addPreferredGap(ComponentPlacement.RELATED)
+								.addComponent(lblS)
+								.addGap(31)))
 						.addGroup(gl_contentPane.createSequentialGroup()
-							.addGap(34)
-							.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
-								.addComponent(btnAddRouter, GroupLayout.DEFAULT_SIZE, 115, Short.MAX_VALUE)
-								.addComponent(btnAddUser, GroupLayout.DEFAULT_SIZE, 115, Short.MAX_VALUE)
-								.addComponent(tree, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 135, Short.MAX_VALUE)))
-						.addGroup(gl_contentPane.createSequentialGroup()
-							.addGap(35)
-							.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
-								.addComponent(lblResult)
-								.addComponent(btnTest))))
-					.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
-						.addGroup(gl_contentPane.createSequentialGroup()
-							.addGap(33)
-							.addComponent(btnRepaint))
-						.addGroup(gl_contentPane.createSequentialGroup()
-							.addGap(17)
-							.addComponent(panel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-					.addContainerGap())
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(btnStart)
+							.addContainerGap())))
 		);
 		gl_contentPane.setVerticalGroup(
-			gl_contentPane.createParallelGroup(Alignment.LEADING)
+			gl_contentPane.createParallelGroup(Alignment.TRAILING)
 				.addGroup(gl_contentPane.createSequentialGroup()
 					.addContainerGap()
-					.addComponent(btnRepaint)
-					.addPreferredGap(ComponentPlacement.RELATED)
 					.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
-						.addComponent(panel, GroupLayout.DEFAULT_SIZE, 403, Short.MAX_VALUE)
-						.addGroup(gl_contentPane.createSequentialGroup()
-							.addComponent(tree, GroupLayout.PREFERRED_SIZE, 258, GroupLayout.PREFERRED_SIZE)
-							.addGap(27)
-							.addComponent(btnAddUser)
-							.addPreferredGap(ComponentPlacement.UNRELATED)
-							.addComponent(btnAddRouter)
-							.addGap(16)
-							.addComponent(btnTest)
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(lblResult)))
+						.addComponent(separator, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+						.addGroup(gl_contentPane.createParallelGroup(Alignment.TRAILING, false)
+							.addComponent(panel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+							.addComponent(tree, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
 					.addContainerGap())
+				.addGroup(gl_contentPane.createSequentialGroup()
+					.addGap(33)
+					.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE)
+						.addComponent(lblExperimentTime)
+						.addComponent(timeField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+						.addComponent(lblS))
+					.addGap(18)
+					.addComponent(btnStart)
+					.addPreferredGap(ComponentPlacement.RELATED, 179, Short.MAX_VALUE)
+					.addComponent(btnTest)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(lblResult)
+					.addGap(108))
 		);
 		
 		panel.add(vv);
@@ -244,6 +280,7 @@ public class ConnectorGUI extends JFrame{
 		final Icon router_redicon = new ImageIcon("res/images/router_red.png");
 		final Icon router_blueicon = new ImageIcon("res/images/router_blue.png");
 		final Icon usericon = new ImageIcon("res/images/user.png");
+		final Icon servericon = new ImageIcon("res/images/server.png");
 		Transformer<Node, Icon> vertexIconTransformer =	new Transformer<Node, Icon>() {
 			@Override
 			public Icon transform(Node node) {
@@ -255,6 +292,7 @@ public class ConnectorGUI extends JFrame{
 						case Node.STATUS_DOWN:return router_redicon;
 					}
 				case Node.USER_TYPE:return usericon;
+				case Node.SERVER_TYPE:return servericon;
 				}
 				return null;
 			}
