@@ -11,9 +11,11 @@ public class Constants {
 	public static final String CONFIRM_PONG="pong";
 	public static final String INFORM_COFFEE = "who did it?";
 	public static final String INFORM_STARTMODELING = "prepare for modeling";
+	public static final String CONFIRM_TCP = "tcp";
 	
 	//CID
 	public static final String NULL_CID="null"; //no conversation purpose
+	public static final String CONFIRM_CID="confirm"; //no conversation purpose
 	
 	//GUI events
 	public static final int TEST_GUIEVENT = 0;

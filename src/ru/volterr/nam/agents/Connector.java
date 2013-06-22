@@ -143,7 +143,7 @@ public class Connector extends GuiAgent {
 			send(msg);
 			break;
 		case Constants.STARTMODELING_GUIEVENT:
-			startModeling( ((Long)ev.getParameter(0)) * 1000 );
+			startModeling( ((Long)ev.getParameter(0)) * 2400 );	//calculated in ms, received in days
 			//example();
 			break;
 		}
@@ -280,7 +280,7 @@ public class Connector extends GuiAgent {
 				int i = route.lastIndexOf(new Node(requester,Node.ROUTER_TYPE));
 			
 				if(i != -1){
-					log.log(Logger.INFO, getLocalName() + "#" + "found route for " + requester.getName() + " for path (" + src.getLocalName() + ", " + dest.getLocalName() + "). Next hop is " + route.get(i+1).getName() );
+					log.log(Logger.INFO, getLocalName() + "#" + "found route for " + requester.getLocalName() + " for path (" + src.getLocalName() + ", " + dest.getLocalName() + "). Next hop is " + route.get(i+1).getName() );
 					return route.get(i+1).getId();
 				}
 				else{

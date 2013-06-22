@@ -1,9 +1,12 @@
 package ru.volterr.nam.agents;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import ru.volterr.nam.behaviours.user.RecvPing;
 import ru.volterr.nam.behaviours.user.ServerReceiveMsg;
+import ru.volterr.nam.behaviours.user.ServerSendConfirm;
 import ru.volterr.nam.behaviours.user.UserReceiveMsg;
 import ru.volterr.nam.behaviours.user.UserStaticGenTraffic;
 import ru.volterr.nam.gui.views.UserGUI;
@@ -21,6 +24,8 @@ public class ServerAgent extends GuiAgent {
 	private AID gateway;
 
 	private Logger log;
+	
+	public Map<AID,Integer> received = new HashMap<AID,Integer>();
 	
 	//private ServerGUI gui;	- TODO
 	
@@ -76,7 +81,10 @@ public class ServerAgent extends GuiAgent {
 	
 	public void startModeling(Long time){
 		log.log(Logger.INFO,getLocalName()+"#starts modeling procedure");
-		//TODO - clear data
+		
+		//TODO check on direct/reverse task
+		//direct task
+		addBehaviour(new ServerSendConfirm(this, time));
 	}
 	
 	@Override

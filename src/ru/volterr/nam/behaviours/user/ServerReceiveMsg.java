@@ -44,9 +44,16 @@ public class ServerReceiveMsg extends CyclicBehaviour {
 				try{
 					L3msg = (ACLMessage) L2msg.getContentObject();
 					
+					if(myServer.received.containsKey(L3msg.getSender())){
+						int msgs = myServer.received.get(L3msg.getSender());
+						myServer.received.put(L3msg.getSender(),msgs+1);
+					}else{
+						myServer.received.put(L3msg.getSender(),1);
+					}
+					
 					log.log(Logger.INFO,myServer.getLocalName() + "# received message from " + 
 										L3msg.getSender().getLocalName() + ": " + 
-										L3msg.getContent());
+										L3msg.getContentObject());
 				}catch(Exception e){
 					log.log(Logger.SEVERE,"can't cast to ACLMessage. " +
 										"L2msg has wrong format and doesn't contain " +

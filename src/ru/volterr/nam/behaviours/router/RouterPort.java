@@ -3,6 +3,7 @@ package ru.volterr.nam.behaviours.router;
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.UnreadableException;
 import jade.util.Logger;
 
 import java.util.LinkedList;
@@ -22,7 +23,7 @@ public class RouterPort extends CyclicBehaviour {
 	private RouterAgent myRouter;
 	
 	private LinkedList<ACLMessage> stack = new LinkedList<ACLMessage>();
-	private int stacksize = 20;
+	private int stacksize = 20, cursize=0;
 	private ACLMessage sending;
 	
 	private long dt,
@@ -59,10 +60,19 @@ public class RouterPort extends CyclicBehaviour {
 	public void post(ACLMessage msg){
 		switch(link.getStatus(myRouter.getAID())){
 		case Link.BUSY_STATUS:
-			if(stack.size()<stacksize){
+			int size;
+			try {
+				size = (Integer)(  ( (ACLMessage)msg.getContentObject() ).getContentObject()  );
+			} catch (UnreadableException e) {
+				log.log(Logger.SEVERE, "Check correctness of incapsulation", e);
+				size = 1;
+			}
+			cursize+=size;
+			if(cursize<stacksize){
 				stack.add(msg);
 				log.log(Logger.INFO,myAgent.getLocalName() + "#message is placed in a queue");
 			}else{
+				cursize-=size;
 				drops++;
 				stack.add(msg);
 				stack.removeFirst();
@@ -104,11 +114,19 @@ public class RouterPort extends CyclicBehaviour {
 		log.log(Logger.INFO,myAgent.getLocalName() + "#message is sent to " + ((AID)sending.getAllReceiver().next()).getLocalName());
 
 		myAgent.send(sending);
+		int size;
+		try {
+			size = (Integer)(  ( (ACLMessage)sending.getContentObject() ).getContentObject()  );
+		} catch (UnreadableException e) {
+			log.log(Logger.SEVERE, "Check correctness of incapsulation", e);
+			size = 1;
+		}
+		cursize-=size;
 		sending = null;
 		
 			if(stack.size()>0){
 				sending = stack.removeFirst();
-				delay = getDelay();
+				delay = getDelay(sending);
 				wakeuptime = System.currentTimeMillis() + delay;
 				dt = delay;
 				block(dt);
@@ -123,8 +141,15 @@ public class RouterPort extends CyclicBehaviour {
 		return 1500*100/link.getBandwidth();
 	}
 	private long getDelay(ACLMessage msg){
-		//TODO
-		return getDelay();
+		long delay;
+		try {
+			int size = (Integer)(  ( (ACLMessage)msg.getContentObject() ).getContentObject()  );
+			delay = getDelay()*size;
+		} catch (UnreadableException e) {
+			log.log(Logger.SEVERE, "Check correctness of incapsulation", e);
+			return getDelay();
+		}
+		return delay;
 	}
 	public int getStacksize() {
 		return stacksize;

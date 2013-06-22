@@ -192,13 +192,13 @@ public class ConnectorGUI extends JFrame{
 		btnStart = new JButton("START");
 		
 		timeField = new JTextField();
-		timeField.setText("120");
+		timeField.setText("90");
 		timeField.setColumns(10);
 		
 		JLabel lblExperimentTime = new JLabel("Experiment Time:");
 		lblExperimentTime.setFont(new Font("Tahoma", Font.PLAIN, 13));
 		
-		JLabel lblS = new JLabel("s");
+		JLabel lblS = new JLabel("days");
 		
 		GroupLayout gl_contentPane = new GroupLayout(contentPane);
 		gl_contentPane.setHorizontalGroup(

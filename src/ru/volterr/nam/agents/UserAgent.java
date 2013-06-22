@@ -13,17 +13,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ru.volterr.nam.behaviours.user.RecvPing;
+import ru.volterr.nam.behaviours.user.UserPuasGenTraffic;
+import ru.volterr.nam.behaviours.user.UserReceiveConfirm;
 import ru.volterr.nam.behaviours.user.UserReceiveMsg;
 import ru.volterr.nam.behaviours.user.UserStaticGenTraffic;
 import ru.volterr.nam.behaviours.user.UserSubscribe;
 import ru.volterr.nam.gui.views.UserGUI;
+import ru.volterr.nam.law.TimeLaw;
+import ru.volterr.nam.law.TimePuasLaw;
 
 @SuppressWarnings("serial")
 public class UserAgent extends GuiAgent {
 
-	private List<AID> subscriptions = new ArrayList<AID>();
+	private List<AID> receivers = new ArrayList<AID>();
+	private AID optReceiver;
+	public int sendtoopt=0;
 	private AID gateway;
 	//public int dt = 1000;	- deprecated generation parameter
+	
+	public TimePuasLaw tlaw = new TimePuasLaw();
+	private int maxMT=7, minMT=2;
 	
 	private Logger log;
 	
@@ -42,8 +51,10 @@ public class UserAgent extends GuiAgent {
 		if(args!=null && args.length>0)
 			try{
 				this.setGateway((AID)args[0]);
-				if (args[1] != null)
-					this.subscriptions.addAll( (List<AID>) args[1] );
+				if (args[1] != null){
+					this.receivers.addAll( (List<AID>) args[1] );
+					setOptReceiver(receivers.get(0));
+				}
 			}catch(Exception e){
 				log.log(Logger.SEVERE, "Exception:", e);
 			}
@@ -84,23 +95,26 @@ public class UserAgent extends GuiAgent {
 	
 	public void startModeling(Long time){
 		log.log(Logger.INFO,getLocalName()+"#starts modeling procedure");
-		addBehaviour(new UserStaticGenTraffic(this,time));
+		addBehaviour(new UserPuasGenTraffic(this,time));
+		//TODO check on direct/reverse task
+		//direct task
+		addBehaviour(new UserReceiveConfirm(this, time));
 	}
 	
-	public void addSubscriptions(List<AID> targets){
-		subscriptions.addAll(targets);
+	public void addReceivers(List<AID> targets){
+		receivers.addAll(targets);
 	}
 	
-	public void addSubscription(AID target){
-		subscriptions.add(target);
+	public void addReceiver(AID target){
+		receivers.add(target);
 	}
 	
-	public void removeSubscribers(List<AID> targets){
-		subscriptions.removeAll(targets);
+	public void removeReceivers(List<AID> targets){
+		receivers.removeAll(targets);
 	}
 	
-	public void removeSubscriber(AID target){
-		subscriptions.remove(target);
+	public void removeReceiver(AID target){
+		receivers.remove(target);
 	}
 
 
@@ -126,8 +140,56 @@ public class UserAgent extends GuiAgent {
 		this.gateway = gateway;
 	}
 	
-	public List<AID> getSubscriptions() {
-		return subscriptions;
+	public List<AID> getReceivers() {
+		return receivers;
+	}
+
+
+	public AID getOptReceiver() {
+		return optReceiver;
+	}
+
+
+	public void setOptReceiver(AID optReceiver) {
+		this.optReceiver = optReceiver;
+	}
+
+
+	public void incrQuality() {
+		if(tlaw.mT-1>=minMT){
+			tlaw.mT--;
+			log.log(Logger.INFO,"intensity for server " + 
+									optReceiver.getLocalName() + 
+									" was increased");
+		}
+		
+	}
+
+
+	public void decrQuality() {
+		if(tlaw.mT+1>maxMT){	//minimum intensity reached
+			int i = receivers.indexOf(optReceiver);
+			if(i<receivers.size()-1){
+				optReceiver = receivers.get(i+1);	//next server
+				tlaw.mT=minMT;
+				log.log(Logger.INFO,"next server " + 
+										optReceiver.getLocalName() + 
+										" was chosen with max intensivity");
+			}
+			if( (i==receivers.size()-1) && (receivers.size()>1) ){
+				optReceiver = receivers.get(0);		//first one if nothing left win minimum intensity
+				tlaw.mT=maxMT;
+				log.log(Logger.INFO,"best server " + 
+										optReceiver.getLocalName() + 
+										" was chosen with min intensivity");
+			}
+				
+		}else{
+			tlaw.mT++;			//decr intensity
+			log.log(Logger.INFO,"intensity for server " + 
+					optReceiver.getLocalName() + 
+					" was decreased");
+		}
 	}
 	
 

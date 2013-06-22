@@ -15,6 +15,7 @@ public abstract class UserGenTraffic extends SimpleBehaviour {
 	private long 	delay = 100,					//interval between checks
 					dt = delay,						//block interval
 	 				wakeuptime=0; 					//nextmessage send check
+	public int hour=9;
 	
 	public long getCurrenttime() {
 		return currenttime;
@@ -37,6 +38,9 @@ public abstract class UserGenTraffic extends SimpleBehaviour {
 		if((currenttime = System.currentTimeMillis())<=stoptime){
 			if((dt=wakeuptime-currenttime)<0)
 			{		
+				hour++;
+				if(hour==24)
+					hour=0;
 				generate();
 				
 				wakeuptime = System.currentTimeMillis()+delay;
