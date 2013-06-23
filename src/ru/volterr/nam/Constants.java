@@ -12,6 +12,7 @@ public class Constants {
 	public static final String INFORM_COFFEE = "who did it?";
 	public static final String INFORM_STARTMODELING = "prepare for modeling";
 	public static final String CONFIRM_TCP = "tcp";
+	public static final String CONFIRM_FINISHMODELING = "here is modeling results";
 	
 	//CID
 	public static final String NULL_CID="null"; //no conversation purpose

@@ -2,6 +2,7 @@ package ru.volterr.nam.behaviours.router;
 
 import ru.volterr.nam.AIDPair;
 import ru.volterr.nam.Constants;
+import ru.volterr.nam.ModelingPair;
 import ru.volterr.nam.agents.RouterAgent;
 import ru.volterr.nam.agents.UserAgent;
 import ru.volterr.nam.model.Link;
@@ -80,7 +81,8 @@ public class RouterReceiveMsg extends CyclicBehaviour {
 			}
 			if(L2msg.getProtocol().equals(Constants.INFORM_STARTMODELING)){
 				try {
-					myRouter.startModeling((Long) L2msg.getContentObject());
+					ModelingPair pair = (ModelingPair)L2msg.getContentObject();
+					myRouter.startModeling(pair.getFirst(),pair.getSecond());
 				} catch (UnreadableException e) {
 					log.log(Logger.SEVERE, "Cast Exception:", e);
 				}

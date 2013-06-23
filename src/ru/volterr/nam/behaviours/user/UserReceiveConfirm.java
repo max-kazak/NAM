@@ -37,8 +37,9 @@ private boolean done = false;
 				
 				handle(confmsg);
 			}
-			block();
+			block(100);
 		}else{
+			myUser.addBehaviour(new UserSendModData(myUser));
 			done = true;
 		}
 

@@ -26,7 +26,7 @@ import ru.volterr.nam.law.TimePuasLaw;
 public class UserAgent extends GuiAgent {
 
 	private List<AID> receivers = new ArrayList<AID>();
-	private AID optReceiver;
+	private AID optReceiver, oldOptRec;
 	public int sendtoopt=0;
 	private AID gateway;
 	//public int dt = 1000;	- deprecated generation parameter
@@ -54,6 +54,7 @@ public class UserAgent extends GuiAgent {
 				if (args[1] != null){
 					this.receivers.addAll( (List<AID>) args[1] );
 					setOptReceiver(receivers.get(0));
+					oldOptRec = optReceiver;
 				}
 			}catch(Exception e){
 				log.log(Logger.SEVERE, "Exception:", e);
@@ -93,12 +94,13 @@ public class UserAgent extends GuiAgent {
 		
 	}
 	
-	public void startModeling(Long time){
+	public void startModeling(Long time,Boolean mode){
 		log.log(Logger.INFO,getLocalName()+"#starts modeling procedure");
 		addBehaviour(new UserPuasGenTraffic(this,time));
-		//TODO check on direct/reverse task
+		
 		//direct task
-		addBehaviour(new UserReceiveConfirm(this, time));
+		if(mode)
+			addBehaviour(new UserReceiveConfirm(this, time));
 	}
 	
 	public void addReceivers(List<AID> targets){
@@ -152,6 +154,11 @@ public class UserAgent extends GuiAgent {
 
 	public void setOptReceiver(AID optReceiver) {
 		this.optReceiver = optReceiver;
+	}
+
+
+	public AID getOldOptRec() {
+		return oldOptRec;
 	}
 
 

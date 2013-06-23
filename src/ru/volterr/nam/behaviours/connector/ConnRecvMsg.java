@@ -1,7 +1,12 @@
 package ru.volterr.nam.behaviours.connector;
 
+import java.util.Map.Entry;
+
 import ru.volterr.nam.AIDPair;
 import ru.volterr.nam.Constants;
+import ru.volterr.nam.Pair;
+import ru.volterr.nam.RouterModData;
+import ru.volterr.nam.UserModData;
 import ru.volterr.nam.agents.Connector;
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
@@ -26,8 +31,7 @@ public class ConnRecvMsg extends CyclicBehaviour {
 	
 	@Override
 	public void action() {
-		msg = myAgent.receive(mt);
-		if (msg != null) {
+		while ((msg= myAgent.receive(mt)) != null) {
 			switch(msg.getPerformative()){
 				case ACLMessage.REQUEST:
 					if(msg.getProtocol().equals(Constants.REQUEST_ROUTE)){
@@ -46,13 +50,19 @@ public class ConnRecvMsg extends CyclicBehaviour {
 					}
 					break;
 				case ACLMessage.INFORM:
-					log.log(Logger.INFO, myAgent.getLocalName() + "#"+msg.getSender().getLocalName()+"notified about failure");
+					log.log(Logger.INFO, myAgent.getLocalName() + "#"+msg.getSender().getLocalName()+" notified about failure");
 					if(msg.getProtocol().equals(Constants.INFORM_COFFEE)){
 						AID aid = msg.getSender();
 						if(msg.getContent().equals("down"))
 							myConnector.nodeStatusChange(aid, false);
 						else
 							myConnector.nodeStatusChange(aid, true);
+					}
+					break;
+				case ACLMessage.CONFIRM:
+					log.log(Logger.INFO, myAgent.getLocalName() + "#"+msg.getSender().getLocalName()+" finished modeling");
+					if(msg.getProtocol().equals(Constants.CONFIRM_FINISHMODELING)){
+						handleModMsg(msg);
 					}
 					break;
 						
@@ -63,6 +73,27 @@ public class ConnRecvMsg extends CyclicBehaviour {
 		// не появится хотя бы одно сообщение
 		block();
 
+	}
+
+	
+	
+	private void handleModMsg(ACLMessage msg) {
+		myConnector.allmodelagents--;
+		try {
+			if(myConnector.mode){
+				UserModData data = (UserModData) msg.getContentObject();
+				myConnector.usermodset.add(data);
+			}else{
+				RouterModData data = (RouterModData) msg.getContentObject();
+				myConnector.routermodset.add(data);
+			}
+		} catch (Exception e) {
+			log.log(Logger.SEVERE,"Exception:",e);
+		}
+		
+		if(myConnector.allmodelagents==0){
+			myConnector.finishModeling();
+		}
 	}
 
 }

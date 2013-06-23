@@ -13,15 +13,20 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Iterator;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
 import ru.volterr.nam.Constants;
+import ru.volterr.nam.Pair;
+import ru.volterr.nam.RouterModData;
+import ru.volterr.nam.UserModData;
 import ru.volterr.nam.agents.Connector;
 import ru.volterr.nam.gui.model.CellTreeRenderer;
 import ru.volterr.nam.model.Link;
@@ -33,6 +38,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JTree;
 import javax.swing.JButton;
 import javax.swing.ToolTipManager;
@@ -58,6 +64,11 @@ import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.JTextField;
 import javax.swing.JFormattedTextField;
+import javax.swing.JRadioButton;
+import javax.swing.ButtonGroup;
+import javax.swing.Box;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 
 
 public class ConnectorGUI extends JFrame{
@@ -65,13 +76,11 @@ public class ConnectorGUI extends JFrame{
 	private Connector myAgent;
 	
 	private JPanel contentPane;
-	private JButton btnTest;
 	private JButton btnStart;
 	private JTree tree;
 		private DefaultMutableTreeNode usersNode;
 		private DefaultMutableTreeNode routersNode;
 		private DefaultMutableTreeNode serversNode;
-	private JLabel lblResult;
 		
 	VisualizationViewer<Node,Link> vv;
 	private Layout<Node,Link> layout;
@@ -80,6 +89,11 @@ public class ConnectorGUI extends JFrame{
 	private JPanel panel;
 	private JMenuBar menuBar;
 	private JTextField timeField;
+	private final ButtonGroup buttonGroup = new ButtonGroup();
+
+	private JRadioButton rdbtnDirect;
+
+	private JRadioButton rdbtnReverse;
 	
 	/**
 	 * Create the frame.
@@ -97,16 +111,6 @@ public class ConnectorGUI extends JFrame{
 	
 	private void initListeners() {
 		
-		btnTest.addActionListener(new ActionListener(){
-
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				GuiEvent ge = new GuiEvent(this, Constants.TEST_GUIEVENT);
-				myAgent.postGuiEvent(ge);
-			}
-			
-		});
-		
 		btnStart.addActionListener(new ActionListener(){
 
 			@Override
@@ -114,6 +118,9 @@ public class ConnectorGUI extends JFrame{
 				GuiEvent ge = new GuiEvent(this, Constants.STARTMODELING_GUIEVENT);
 				try{
 					ge.addParameter( Long.decode(timeField.getText()) );
+					Boolean mode;
+					mode = rdbtnDirect.isSelected();
+					ge.addParameter(mode);
 					myAgent.postGuiEvent(ge);				
 				}catch(NumberFormatException e){
 					timeField.setText("wrong number!");
@@ -144,7 +151,7 @@ public class ConnectorGUI extends JFrame{
 
 	private void initComponents(){
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 1074, 492);
+		setBounds(100, 100, 1074, 496);
 		
 		menuBar = new JMenuBar();
 		menuBar.add(modeMenu);
@@ -152,9 +159,6 @@ public class ConnectorGUI extends JFrame{
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
-		btnTest = new JButton("Test");
-		
-		lblResult = new JLabel("Result:");
 		
 		panel = new JPanel();
 		
@@ -200,60 +204,73 @@ public class ConnectorGUI extends JFrame{
 		
 		JLabel lblS = new JLabel("days");
 		
+		rdbtnDirect = new JRadioButton("direct");
+		rdbtnDirect.setSelected(true);
+		buttonGroup.add(rdbtnDirect);
+		
+		rdbtnReverse = new JRadioButton("reverse");
+		buttonGroup.add(rdbtnReverse);
+		
+		JLabel lblMode = new JLabel("Mode:");
+		lblMode.setFont(new Font("Tahoma", Font.PLAIN, 13));
+		
 		GroupLayout gl_contentPane = new GroupLayout(contentPane);
 		gl_contentPane.setHorizontalGroup(
 			gl_contentPane.createParallelGroup(Alignment.LEADING)
 				.addGroup(gl_contentPane.createSequentialGroup()
 					.addContainerGap()
 					.addComponent(tree, GroupLayout.PREFERRED_SIZE, 174, GroupLayout.PREFERRED_SIZE)
-					.addGap(32)
+					.addGap(51)
 					.addComponent(panel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-					.addGap(18)
-					.addComponent(separator, GroupLayout.PREFERRED_SIZE, 10, GroupLayout.PREFERRED_SIZE)
 					.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
-						.addGroup(gl_contentPane.createParallelGroup(Alignment.TRAILING)
-							.addGroup(gl_contentPane.createSequentialGroup()
-								.addPreferredGap(ComponentPlacement.RELATED)
-								.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
-									.addComponent(lblResult)
-									.addComponent(btnTest))
-								.addContainerGap(135, Short.MAX_VALUE))
-							.addGroup(gl_contentPane.createSequentialGroup()
-								.addGap(4)
-								.addComponent(lblExperimentTime)
-								.addPreferredGap(ComponentPlacement.UNRELATED)
-								.addComponent(timeField, GroupLayout.PREFERRED_SIZE, 53, GroupLayout.PREFERRED_SIZE)
-								.addPreferredGap(ComponentPlacement.RELATED)
-								.addComponent(lblS)
-								.addGap(31)))
 						.addGroup(gl_contentPane.createSequentialGroup()
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(btnStart)
-							.addContainerGap())))
+							.addGap(18)
+							.addComponent(separator, GroupLayout.PREFERRED_SIZE, 10, GroupLayout.PREFERRED_SIZE)
+							.addGap(4)
+							.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
+								.addComponent(lblExperimentTime)
+								.addComponent(lblMode)
+								.addComponent(btnStart)))
+						.addGroup(gl_contentPane.createSequentialGroup()
+							.addGap(55)
+							.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
+								.addGroup(gl_contentPane.createSequentialGroup()
+									.addGroup(gl_contentPane.createParallelGroup(Alignment.TRAILING)
+										.addComponent(rdbtnDirect)
+										.addComponent(timeField, GroupLayout.PREFERRED_SIZE, 53, GroupLayout.PREFERRED_SIZE))
+									.addGap(18)
+									.addComponent(lblS))
+								.addComponent(rdbtnReverse))))
+					.addContainerGap(54, Short.MAX_VALUE))
 		);
 		gl_contentPane.setVerticalGroup(
-			gl_contentPane.createParallelGroup(Alignment.TRAILING)
+			gl_contentPane.createParallelGroup(Alignment.LEADING)
 				.addGroup(gl_contentPane.createSequentialGroup()
-					.addContainerGap()
 					.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
-						.addComponent(separator, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-						.addGroup(gl_contentPane.createParallelGroup(Alignment.TRAILING, false)
-							.addComponent(panel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-							.addComponent(tree, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-					.addContainerGap())
-				.addGroup(gl_contentPane.createSequentialGroup()
-					.addGap(33)
-					.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE)
-						.addComponent(lblExperimentTime)
-						.addComponent(timeField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-						.addComponent(lblS))
-					.addGap(18)
-					.addComponent(btnStart)
-					.addPreferredGap(ComponentPlacement.RELATED, 179, Short.MAX_VALUE)
-					.addComponent(btnTest)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(lblResult)
-					.addGap(108))
+						.addGroup(gl_contentPane.createSequentialGroup()
+							.addContainerGap()
+							.addComponent(tree, GroupLayout.DEFAULT_SIZE, 410, Short.MAX_VALUE))
+						.addGroup(gl_contentPane.createSequentialGroup()
+							.addContainerGap()
+							.addGroup(gl_contentPane.createParallelGroup(Alignment.LEADING)
+								.addComponent(separator, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+								.addComponent(panel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)))
+						.addGroup(gl_contentPane.createSequentialGroup()
+							.addGap(33)
+							.addComponent(lblExperimentTime)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addGroup(gl_contentPane.createParallelGroup(Alignment.BASELINE)
+								.addComponent(timeField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+								.addComponent(lblS))
+							.addPreferredGap(ComponentPlacement.UNRELATED)
+							.addComponent(lblMode)
+							.addPreferredGap(ComponentPlacement.UNRELATED)
+							.addComponent(rdbtnDirect)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(rdbtnReverse)
+							.addGap(18)
+							.addComponent(btnStart)))
+					.addGap(297))
 		);
 		
 		panel.add(vv);
@@ -321,10 +338,84 @@ public class ConnectorGUI extends JFrame{
 		
 	}
 
-	public synchronized void testresult(final String str){
+	private void processmoddata(){
+		JTable table = new JTable();
+		
+		if(myAgent.mode){
+			DefaultTableModel model = new DefaultTableModel(
+	  				new Object[][] {
+	  				},
+	  				new String[] {
+	  					"Sender", "OldReceiver" ,"NewReceiver", "OldIntensity", "NewIntensity"
+	  				});
+	    	  table.setModel(model);
+	    	  
+	    	  Iterator<UserModData> iter = myAgent.usermodset.iterator();
+	    	  
+	    	  while(iter.hasNext()){
+	    		  UserModData data = iter.next();
+	    		  Double  oldint=1./data.getOldintensity(),
+	    				  newint=1./data.getIntensity();
+	    		  model.addRow(new String[]{data.getUser().getLocalName(),
+	    				  					data.getOldreceiver().getLocalName(),
+	    				  					data.getOptreceiver().getLocalName(),
+	    				  					String.format("%1$,.2f", oldint),
+	    				  					String.format("%1$,.2f", newint)});
+	    	  }
+	    	  
+	    	  DirectModeling frame = new DirectModeling();
+	    	  JScrollPane spTable = new JScrollPane(table);
+	    	  frame.panel.add(spTable,BorderLayout.CENTER);
+	    	  frame.setVisible(true);
+	    }else{
+	    	  DefaultTableModel model = new DefaultTableModel(
+		  				new Object[][] {
+		  				},
+		  				new String[] {
+		  					"Router", "OldBufferSize", "NewBufferSize"
+		  				});
+		    	table.setModel(model);
+		    	  
+		    	Iterator<RouterModData> iter = myAgent.routermodset.iterator();
+		    	  
+		    	while(iter.hasNext()){
+		    		RouterModData data = iter.next();
+		    		model.addRow(new String[]{data.getRouter().getLocalName(),
+		    				  					data.getOldstack().toString(),
+		    				  					data.getStack().toString()});
+		    	}
+		    	
+		    	JTable linkstable = new JTable();
+		    	
+		    	DefaultTableModel linkmodel = new DefaultTableModel(
+		  				new Object[][] {
+		  				},
+		  				new String[] {
+		  					"A-Point", "Z-Point", "OldBandwidth", "NewBandwidth"
+		  				});
+		    	linkstable.setModel(linkmodel);
+		    	  
+		    	for(Link l:myAgent.links){
+		    		linkmodel.addRow(new String[]{l.getA().getName(),
+		    									l.getZ().getName(),
+		    									""+l.getOldbandwidth(),
+		    									""+l.getBandwidth()});
+		    	}
+		    	JScrollPane linkTableContainer = new JScrollPane(linkstable);
+		    			    	
+		    	ReverseModeling frame = new ReverseModeling();
+		    	  JScrollPane spTable = new JScrollPane(table);
+		    	  frame.relaypanel.add(spTable,BorderLayout.CENTER);
+		    	  frame.linkspanel.add(linkTableContainer,BorderLayout.CENTER);
+		    	  frame.setVisible(true);
+	    }
+		
+	}
+	
+	public synchronized void modelingresults(){
 		SwingUtilities.invokeLater(new Runnable() {
 		    public void run() {
-		      lblResult.setText("Result: " + str);
+		      processmoddata();
 		    }
 		  });
 	}

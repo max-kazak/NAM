@@ -16,6 +16,7 @@ import ru.volterr.nam.behaviours.router.RouterReceiveMsg;
 import ru.volterr.nam.behaviours.router.RouterRecvPing;
 import ru.volterr.nam.behaviours.router.RouterRecvPong;
 import ru.volterr.nam.behaviours.router.RouterRequestRoute;
+import ru.volterr.nam.behaviours.router.RouterUpgrade;
 import ru.volterr.nam.behaviours.user.UserReceiveMsg;
 import ru.volterr.nam.behaviours.user.UserStaticGenTraffic;
 import ru.volterr.nam.behaviours.user.UserSubscribe;
@@ -39,6 +40,8 @@ public class RouterAgent extends GuiAgent {
 	public Map<AID,AID> routetable = new HashMap<AID,AID>(); //Map<RecvUser,NextAgent>
 	public Map<AID,RouterPort> ports = new HashMap<AID,RouterPort>(); //direct connections to other routers/users
 	public double fprob = 1.0;	//failure probability
+	public int stacksize = 20;
+	public static int maxbuffer = 50;
 	
 	private Logger log;
 	
@@ -73,7 +76,7 @@ public class RouterAgent extends GuiAgent {
 		DFAgentDescription dfd = new DFAgentDescription();
 		dfd.setName(getAID());
 		ServiceDescription sd = new ServiceDescription();
-		sd.setType("Traffic-routing");
+		sd.setType("Router");
 		sd.setName(getLocalName()+" Router");
 		dfd.addServices(sd);
 		try {
@@ -205,9 +208,11 @@ public class RouterAgent extends GuiAgent {
 		
 	}
 
-	public void startModeling(Long time) {
+	public void startModeling(Long time, Boolean mode) {
 		log.log(Logger.INFO,getLocalName()+"#starts modeling procedure");
-		
+		//mode check
+		if(!mode)
+			addBehaviour(new RouterUpgrade(this,time));
 	}
 	
 }

@@ -79,12 +79,12 @@ public class ServerAgent extends GuiAgent {
 		}	
 	}
 	
-	public void startModeling(Long time){
+	public void startModeling(Long time,Boolean mode){
 		log.log(Logger.INFO,getLocalName()+"#starts modeling procedure");
 		
-		//TODO check on direct/reverse task
 		//direct task
-		addBehaviour(new ServerSendConfirm(this, time));
+		if(mode)
+			addBehaviour(new ServerSendConfirm(this, time));
 	}
 	
 	@Override

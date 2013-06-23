@@ -1,6 +1,7 @@
 package ru.volterr.nam.behaviours.user;
 
 import ru.volterr.nam.Constants;
+import ru.volterr.nam.ModelingPair;
 import ru.volterr.nam.agents.UserAgent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
@@ -55,7 +56,8 @@ public class UserReceiveMsg extends CyclicBehaviour {
 			}*/
 			if(L2msg.getProtocol().equals(Constants.INFORM_STARTMODELING)){
 				try {
-					myUser.startModeling((Long) L2msg.getContentObject());
+					ModelingPair pair = (ModelingPair)L2msg.getContentObject();
+					myUser.startModeling(pair.getFirst(),pair.getSecond());
 				} catch (UnreadableException e) {
 					log.log(Logger.SEVERE, "Cast Exception:", e);
 				}

@@ -6,8 +6,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import edu.uci.ics.jung.algorithms.shortestpath.DijkstraShortestPath;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
@@ -15,7 +18,10 @@ import edu.uci.ics.jung.graph.SortedSparseMultigraph;
 
 import ru.volterr.nam.AIDPair;
 import ru.volterr.nam.Constants;
+import ru.volterr.nam.ModelingPair;
 import ru.volterr.nam.Pair;
+import ru.volterr.nam.RouterModData;
+import ru.volterr.nam.UserModData;
 import ru.volterr.nam.behaviours.connector.ConnNewLink;
 import ru.volterr.nam.behaviours.connector.ConnRecvMsg;
 import ru.volterr.nam.gui.model.BandTransformer;
@@ -51,6 +57,12 @@ public class Connector extends GuiAgent {
 	public SortedSparseMultigraph<Node, Link> graph;
 	private Map<AID,Node> nodes = new HashMap<AID,Node>();
 	private ConnectorGUI  gui;
+	public List<Link> links = new ArrayList<Link>();
+	public Set<UserModData> usermodset = new HashSet<UserModData>();
+	public Set<RouterModData> routermodset = new HashSet<RouterModData>();
+	
+	public int allmodelagents;
+	public Boolean mode;
 	
 	public Connector(){
 		super();
@@ -103,7 +115,7 @@ public class Connector extends GuiAgent {
 		
 	}
 
-	private void startModeling(Long l){
+	private void startModeling(Long l,Boolean mode){
 		AMSAgentDescription [] agents = null;
 		SearchConstraints c = new SearchConstraints();
         c.setMaxResults ( new Long(-1) );
@@ -114,14 +126,35 @@ public class Connector extends GuiAgent {
 			ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 			msg.setProtocol(Constants.INFORM_STARTMODELING);
 			msg.setConversationId(Constants.NULL_CID);
-			msg.setContentObject(l);
+			
+			ModelingPair pair = new ModelingPair(l,mode);
+			msg.setContentObject(pair);
 			for(AMSAgentDescription i:agents){
 				msg.addReceiver(i.getName());
 			}
 			
-			log.log(Logger.INFO,getLocalName() + "#starting modeling procedure. stand by...");
+			String strmode = (mode) ? "direct":"reverse";
+			log.log(Logger.INFO,getLocalName() + "#starting modeling procedure in " + strmode + " mode. stand by...");
 			
 			send(msg);
+			
+			//calc number of active agents
+			DFAgentDescription dfd = new DFAgentDescription();
+	        ServiceDescription sd  = new ServiceDescription();
+	        
+	        if(mode)
+	        	sd.setType( "User" );
+	        else
+	        	sd.setType( "Router" );
+	        
+	        dfd.addServices(sd);
+	        DFAgentDescription[] result;
+			
+			result = DFService.search(this, dfd);
+		
+			allmodelagents = result.length;
+			//_________________________________
+			this.mode=mode;
 			
 		} catch (Exception e) {
 			log.log(Logger.SEVERE, "Exception: " ,e);
@@ -131,10 +164,6 @@ public class Connector extends GuiAgent {
 	@Override
 	protected void onGuiEvent(GuiEvent ev) {
 		switch(ev.getType()){
-		case Constants.TEST_GUIEVENT:
-			testguimethod();
-			//example();
-			break;
 		case Constants.SHOW_GUI_GUIEVENT:
 			ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
 			msg.addReceiver(new AID((String) ev.getParameter(0),AID.ISLOCALNAME));
@@ -143,7 +172,7 @@ public class Connector extends GuiAgent {
 			send(msg);
 			break;
 		case Constants.STARTMODELING_GUIEVENT:
-			startModeling( ((Long)ev.getParameter(0)) * 2400 );	//calculated in ms, received in days
+			startModeling( ((Long)ev.getParameter(0)) * 2400, (Boolean)ev.getParameter(1) );	//calculated in ms, received in days
 			//example();
 			break;
 		}
@@ -230,6 +259,7 @@ public class Connector extends GuiAgent {
 	
 	private void addLink(Link link){
 		addBehaviour(new ConnNewLink(link));
+		links.add(link);
 		graph.addEdge(link, link.getA(), link.getZ(), link.getType());
 		gui.graphRepaint();
 	}
@@ -402,14 +432,9 @@ public class Connector extends GuiAgent {
 		
 		
 	}
-	
-	public void testguimethod(){
-		System.out.println("Cought event from Connector GUI");
-		gui.testresult("OK");
-		AID id = new AID("Sprawl",AID.ISLOCALNAME);
-		if(nodes.get(id).getStatus()==Node.STATUS_UP)
-			nodeStatusChange(id, false);
-		else
-			nodeStatusChange(id, true);
+
+	public void finishModeling() {
+		gui.modelingresults();
+		
 	}
 }

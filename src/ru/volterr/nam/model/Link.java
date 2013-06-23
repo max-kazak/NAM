@@ -18,7 +18,12 @@ public class Link implements Serializable {
 	private String name;
 	private int astatus = 0, zstatus = 0;
 	
+	private long busytime = 0, startbusytime,
+				startwatchtime=0;	//when busy status observation started
+	
 	private long bandwidth;
+	private long oldbandwidth;
+	public static long maxband = 10000;
 	private boolean available=true;
 	private double fprob = 1.0;
 	//public Link(){}
@@ -27,6 +32,7 @@ public class Link implements Serializable {
 	//}
 	public Link(Node apoint, Node zpoint, long bandwidth){
 		this.bandwidth=bandwidth;
+		oldbandwidth=bandwidth;
 		this.a = apoint;
 		this.z = zpoint;
 		name = "(" + a.getName() + ", " + z.getName() + ")";
@@ -45,17 +51,50 @@ public class Link implements Serializable {
 	public synchronized void setBandwidth(long bandwidth) {
 		this.bandwidth = bandwidth;
 	}
+	
+	public long getOldbandwidth() {
+		return oldbandwidth;
+	}
 	public synchronized int getStatus(AID from) {
 		if(from.equals(a.getId()))
 			return astatus;
 		else return zstatus;
 	}
+	
+	
 	public synchronized void setStatus(AID from, int status) {
-		if(from.equals(a.getId()))
+		int oldstatus;
+		if(from.equals(a.getId())){
+			oldstatus = this.astatus;
 			this.astatus = status;
-		else
+		}else{
+			oldstatus = this.zstatus;
 			this.zstatus = status;
+		}
+		
+		if(startwatchtime==0)
+			startwatchtime = System.currentTimeMillis();
+		
+		//calculate busytime
+		if(oldstatus!=status){
+			if(status==BUSY_STATUS)
+				startbusytime = System.currentTimeMillis();
+			else
+				busytime += System.currentTimeMillis()-startbusytime;
+		}
+		
 	}
+	
+	public double getPercBusyTime(){
+		long watchtime = startwatchtime - System.currentTimeMillis();
+		double perc = (double)busytime/watchtime;
+		busytime = 0;
+		startwatchtime = System.currentTimeMillis();
+		startbusytime = startwatchtime;
+		return perc;
+	}
+	
+	
 	public Node getA() {
 		return a;
 	}

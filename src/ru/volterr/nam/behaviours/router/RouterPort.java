@@ -18,12 +18,14 @@ public class RouterPort extends CyclicBehaviour {
 	
 	private Link link;
 	private int drops = 0;
+	private int sent = 0;
 	private int state = STATE_UP;
 	
 	private RouterAgent myRouter;
 	
 	private LinkedList<ACLMessage> stack = new LinkedList<ACLMessage>();
-	private int stacksize = 20, cursize=0;
+	private int //stacksize = 20, 
+			cursize=0;
 	private ACLMessage sending;
 	
 	private long dt,
@@ -68,7 +70,7 @@ public class RouterPort extends CyclicBehaviour {
 				size = 1;
 			}
 			cursize+=size;
-			if(cursize<stacksize){
+			if(cursize<myRouter.stacksize){
 				stack.add(msg);
 				log.log(Logger.INFO,myAgent.getLocalName() + "#message is placed in a queue");
 			}else{
@@ -114,6 +116,7 @@ public class RouterPort extends CyclicBehaviour {
 		log.log(Logger.INFO,myAgent.getLocalName() + "#message is sent to " + ((AID)sending.getAllReceiver().next()).getLocalName());
 
 		myAgent.send(sending);
+		sent++;
 		int size;
 		try {
 			size = (Integer)(  ( (ACLMessage)sending.getContentObject() ).getContentObject()  );
@@ -151,12 +154,12 @@ public class RouterPort extends CyclicBehaviour {
 		}
 		return delay;
 	}
-	public int getStacksize() {
+	/*public int getStacksize() {
 		return stacksize;
 	}
 	public void setStacksize(int stacksize) {
 		this.stacksize = stacksize;
-	}
+	}*/
 	public int getDrops() {
 		return drops;
 	}
@@ -170,5 +173,11 @@ public class RouterPort extends CyclicBehaviour {
 			wakeuptime=0;
 		this.state = state;
 	}
-	
+	public int getSent() {
+		return sent;
+	}
+	public void clearCounters(){
+		sent=0;
+		drops=0;
+	}
 }
