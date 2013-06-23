@@ -8,6 +8,7 @@ import jade.util.Logger;
 
 import java.util.LinkedList;
 
+import ru.volterr.nam.Constants;
 import ru.volterr.nam.agents.RouterAgent;
 import ru.volterr.nam.model.Link;
 
@@ -75,9 +76,10 @@ public class RouterPort extends CyclicBehaviour {
 				log.log(Logger.INFO,myAgent.getLocalName() + "#message is placed in a queue");
 			}else{
 				cursize-=size;
-				drops++;
-				stack.add(msg);
-				stack.removeFirst();
+				
+				drop(msg);
+				//stack.add(msg);
+				//stack.removeFirst();
 				log.log(Logger.INFO,myAgent.getLocalName() + "#queue overflow on link " + link.getName());
 			}
 			break;
@@ -90,6 +92,22 @@ public class RouterPort extends CyclicBehaviour {
 		}
 	}
 	
+	private void drop(ACLMessage msg) {
+		drops++;
+		try {
+			ACLMessage L3msg = (ACLMessage) msg.getContentObject();
+			AID user = L3msg.getSender();
+			ACLMessage dropmsg = new ACLMessage(ACLMessage.REFUSE);
+			dropmsg.setConversationId(Constants.NULL_CID);
+			dropmsg.addReceiver(user);
+			dropmsg.setProtocol(Constants.REFUSE_DROP);
+			myRouter.send(dropmsg);
+		} catch (Exception e) {
+			log.log(Logger.SEVERE,"Exception",e);
+		}
+		
+		
+	}
 	@Override
 	public void action() {
 		if(state==STATE_UP){

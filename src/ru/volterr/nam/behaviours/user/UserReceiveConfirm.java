@@ -21,6 +21,8 @@ private boolean done = false;
 
 	private Logger log;
 	
+	private int day = 1;
+	
 	public UserReceiveConfirm(UserAgent a,Long time){
 		myUser = a;
 		starttime = System.currentTimeMillis();
@@ -40,6 +42,7 @@ private boolean done = false;
 			block(100);
 		}else{
 			myUser.addBehaviour(new UserSendModData(myUser));
+			myUser.showgraph();
 			done = true;
 		}
 
@@ -49,21 +52,24 @@ private boolean done = false;
 		try {
 			int received = (Integer)confmsg.getContentObject();
 			Integer send = new Integer(myUser.sendtoopt);
+			Integer lost = new Integer(myUser.droppedontheway);
 			myUser.sendtoopt=0;
+			myUser.droppedontheway=0;
 			//System.out.println("send after zeroing:" + send);
-			int lost = send.intValue()-received;
+			
 			if(lost<0){
 				log.log(Logger.SEVERE,"lost packets < 0. WTF???!!!" + "   send: " + send + "   received: " + received);
 				lost=0;
 			}else{
-				double ratio = (double)lost/send;
+				double ratio = (double)lost/(lost+received);
 				//System.out.println("ratio: " + ratio + "   send: " + send + "   received: " + received + "   lost: " + lost);
 				if(ratio > 0.3)
 					myUser.decrQuality();
 				if(ratio < 0.1)
 					myUser.incrQuality();
 			}
-			
+			myUser.series.add(day, myUser.tlaw.mT);
+			day+=1;
 		} catch (Exception e) {
 			log.log(Logger.SEVERE, "Exception", e);
 		}

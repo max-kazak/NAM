@@ -12,6 +12,13 @@ import jade.util.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+
 import ru.volterr.nam.behaviours.user.RecvPing;
 import ru.volterr.nam.behaviours.user.UserPuasGenTraffic;
 import ru.volterr.nam.behaviours.user.UserReceiveConfirm;
@@ -27,7 +34,7 @@ public class UserAgent extends GuiAgent {
 
 	private List<AID> receivers = new ArrayList<AID>();
 	private AID optReceiver, oldOptRec;
-	public int sendtoopt=0;
+	public int sendtoopt=0,droppedontheway=0;
 	private AID gateway;
 	//public int dt = 1000;	- deprecated generation parameter
 	
@@ -37,6 +44,10 @@ public class UserAgent extends GuiAgent {
 	private Logger log;
 	
 	private UserGUI gui;
+	
+	//Dataset
+	public XYSeriesCollection dataset = new XYSeriesCollection();
+	public XYSeries series = new XYSeries("Plan 1", false, true);
 	
 	public void setup(){
 		//init logger
@@ -197,6 +208,14 @@ public class UserAgent extends GuiAgent {
 					optReceiver.getLocalName() + 
 					" was decreased");
 		}
+	}
+
+
+	public void showgraph() {
+		dataset.addSeries(series);
+		
+		gui.drawgraph();
+		
 	}
 	
 

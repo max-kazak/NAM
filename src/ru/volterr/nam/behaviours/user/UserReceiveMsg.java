@@ -74,6 +74,11 @@ public class UserReceiveMsg extends CyclicBehaviour {
 				myUser.showGui();
 			}
 			break;
+		case ACLMessage.REFUSE:
+			if(L2msg.getProtocol().equals(Constants.REFUSE_DROP)){	
+				myUser.droppedontheway++;
+			}
+			break;
 		}
 	}
 }

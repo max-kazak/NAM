@@ -13,6 +13,7 @@ public class Constants {
 	public static final String INFORM_STARTMODELING = "prepare for modeling";
 	public static final String CONFIRM_TCP = "tcp";
 	public static final String CONFIRM_FINISHMODELING = "here is modeling results";
+	public static final String REFUSE_DROP = "msg dropped";
 	
 	//CID
 	public static final String NULL_CID="null"; //no conversation purpose
